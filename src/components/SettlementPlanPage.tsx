@@ -152,11 +152,13 @@ export default function SettlementPlanPage() {
       refreshBrand();
     } catch (err: any) {
       console.error('Failed to submit class change', err);
-      setChangeError(
-        err.response?.data?.message ||
-          err.message ||
-          'Failed to submit class change application.'
-      );
+      const data = err.response?.data;
+      let errorMsg = data?.message || err.message || 'Failed to submit class change application.';
+      if (data?.errors && typeof data.errors === 'object') {
+        const errorList = Object.values(data.errors).flat().join(' ');
+        if (errorList) errorMsg = errorList;
+      }
+      setChangeError(errorMsg);
     } finally {
       setSubmittingChange(false);
     }

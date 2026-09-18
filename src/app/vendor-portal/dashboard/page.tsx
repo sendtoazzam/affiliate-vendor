@@ -104,7 +104,7 @@ export default function VendorDashboardPage() {
 
       {/* Welcome Banner */}
       <div className="card bg-gradient-to-r from-primary to-primary/85 text-primary-content shadow-xl overflow-hidden relative border border-primary/20">
-        <div className="card-body p-6 sm:p-8 relative z-10">
+        <div className="card-body p-6 sm:p-8 relative z-[1]">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-2">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 text-white text-xs font-semibold backdrop-blur-sm">

@@ -778,7 +778,7 @@ export default function DashboardLayout({
         } min-w-0 transition-all duration-200`}
       >
         {/* Top Navbar */}
-        <header className="h-16 bg-base-100 border-b border-base-300 sticky top-0 z-10 px-6 flex items-center justify-between">
+        <header className="h-16 bg-base-100 border-b border-base-300 sticky top-0 z-30 px-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
