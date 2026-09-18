@@ -6,11 +6,12 @@ export interface Brand {
   slug: string;
   logo_url?: string;
   description?: string;
-  settlement_class: SettlementClass;
+  settlement_class?: SettlementClass;
+  current_class?: SettlementClass;
   commission_class?: string;
-  brand_share_percentage: number;
-  bonus_fund_percentage: number;
-  platform_fee_percentage: number;
+  brand_share_percentage?: number;
+  bonus_fund_percentage?: number;
+  platform_fee_percentage?: number;
   contact_person?: string;
   contact_phone?: string;
   contact_email?: string;

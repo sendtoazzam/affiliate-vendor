@@ -144,6 +144,44 @@ export const vendorApi = {
     return response.data;
   },
 
+  // Notifications
+  getNotifications: async (params?: { page?: number; per_page?: number }) => {
+    const response = await apiClient.get("/v1/notifications", { params });
+    return response.data?.data || response.data || [];
+  },
+
+  getUnreadNotificationsCount: async () => {
+    const response = await apiClient.get("/v1/notifications/unread-count");
+    return response.data?.count ?? 0;
+  },
+
+  markNotificationAsRead: async (id: string) => {
+    const response = await apiClient.post(`/v1/notifications/${id}/read`);
+    return response.data;
+  },
+
+  markAllNotificationsAsRead: async () => {
+    const response = await apiClient.post("/v1/notifications/read-all");
+    return response.data;
+  },
+
+  // Push Devices (FCM)
+  registerPushDevice: async (data: {
+    platform: string;
+    fcm_token: string;
+    device_id: string;
+    device_label?: string;
+    app_version?: string;
+  }) => {
+    const response = await apiClient.post("/v1/devices/register", data);
+    return response.data;
+  },
+
+  revokePushDevice: async (deviceId: string) => {
+    const response = await apiClient.delete(`/v1/devices/${deviceId}`);
+    return response.data;
+  },
+
   // Maintenance Status
   getMaintenanceStatus: async (app = "shop") => {
     try {

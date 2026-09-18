@@ -21,6 +21,12 @@ export default function ForgotPasswordPage() {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  React.useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.title = "VamoFlex Vendor | Forgot Password";
+    }
+  }, []);
+
   const handleMethodChange = (method: "email" | "username") => {
     setLoginMethod(method);
     setIdentifier("");

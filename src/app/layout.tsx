@@ -16,7 +16,10 @@ const geistMono = localFont({
 import Providers from "@/components/Providers";
 
 export const metadata: Metadata = {
-  title: "VAMOFLEX Vendor Portal | Multi-Brand Partner Hub",
+  title: {
+    template: "VamoFlex Vendor | %s",
+    default: "VamoFlex Vendor",
+  },
   description:
     "Curated Brand Partner Portal for Products, Reporting, Settlements and Payouts",
   icons: {

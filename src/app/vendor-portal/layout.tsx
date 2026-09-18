@@ -24,11 +24,15 @@ import {
   Layers,
   User,
   HelpCircle,
+  History,
+  Percent,
 } from "lucide-react";
 import ConfirmModal from "@/components/ConfirmModal";
 import SessionExpiredModal from "@/components/SessionExpiredModal";
 import VendorLoader from "@/components/VendorLoader";
 import PreloaderBar from "@/components/PreloaderBar";
+import NotificationBell from "@/components/NotificationBell";
+import { firebaseMessaging } from "@/lib/firebase-messaging";
 
 export default function DashboardLayout({
   children,
@@ -62,6 +66,13 @@ export default function DashboardLayout({
   }, [isLoading, isAuthenticated, isSessionExpired, router]);
 
   useEffect(() => {
+    if (isAuthenticated) {
+      firebaseMessaging.reRegisterIfEnabled();
+      firebaseMessaging.listenForForegroundMessages();
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
     if (pathname.includes("/catalog") || pathname.includes("/products")) {
       setOpenSubmenu("catalog");
     } else if (
@@ -69,8 +80,96 @@ export default function DashboardLayout({
       pathname.includes("/reporting")
     ) {
       setOpenSubmenu("insights");
+    } else if (
+      pathname.includes("/commerce-hub") ||
+      pathname.includes("/settlement-plan")
+    ) {
+      setOpenSubmenu("commerce-hub");
     } else {
       setOpenSubmenu(null);
+    }
+
+    const getPageTitle = (path: string): string => {
+      if (
+        path === "/vendor-portal/dashboard" ||
+        path === "/vendor-portal" ||
+        path === "/dashboard" ||
+        path === "/"
+      ) {
+        return "Dashboard";
+      }
+      if (
+        path.includes("/catalog/manage-product") ||
+        path === "/vendor-portal/products" ||
+        path === "/products"
+      ) {
+        return "Manage Products";
+      }
+      if (
+        path.includes("/catalog/add-product") ||
+        path === "/vendor-portal/products/new" ||
+        path === "/products/new"
+      ) {
+        return "Add Product";
+      }
+      if (
+        path.includes("/catalog/performance") ||
+        path === "/vendor-portal/products/performance" ||
+        path === "/products/performance"
+      ) {
+        return "NCS Leaderboard";
+      }
+      if (
+        path.includes("/catalog/breakdown") ||
+        path === "/vendor-portal/products/breakdown" ||
+        path === "/products/breakdown"
+      ) {
+        return "Catalog Breakdown";
+      }
+      if (path.includes("/edit")) {
+        return "Edit Product";
+      }
+      if (
+        path.includes("/insights/sales-report") ||
+        path === "/vendor-portal/reporting" ||
+        path === "/reporting"
+      ) {
+        return "Sales Report";
+      }
+      if (
+        path.includes("/insights/performance-report") ||
+        path === "/vendor-portal/reporting/products" ||
+        path === "/reporting/products"
+      ) {
+        return "Performance Report";
+      }
+      if (
+        path.includes("/accounting")
+      ) {
+        return "Accounting & Payouts";
+      }
+      if (
+        path.includes("/history")
+      ) {
+        return "Class Change History";
+      }
+      if (
+        path.includes("/settlement-plan") ||
+        path.includes("/commerce-hub")
+      ) {
+        return "Settlement Plan";
+      }
+      if (path.includes("/profile")) {
+        return "Profile";
+      }
+      if (path.includes("/support")) {
+        return "Help & Support";
+      }
+      return "Portal";
+    };
+
+    if (typeof document !== "undefined") {
+      document.title = `VamoFlex Vendor | ${getPageTitle(pathname)}`;
     }
   }, [pathname]);
 
@@ -183,11 +282,28 @@ export default function DashboardLayout({
       icon: Receipt,
     },
     {
-      type: "link" as const,
-      name: "Settlement Plan",
-      href: "/vendor-portal/settlement-plan",
-      aliases: ["/settlement-plan"],
+      type: "group" as const,
+      name: "Commerce Hub",
+      key: "commerce-hub",
       icon: Layers,
+      items: [
+        {
+          name: "Settlement Plan",
+          href: "/vendor-portal/commerce-hub/settlement-plan",
+          aliases: ["/vendor-portal/settlement-plan", "/settlement-plan"],
+          icon: Percent,
+        },
+        {
+          name: "Class Change History",
+          href: "/vendor-portal/commerce-hub/history",
+          aliases: [
+            "/vendor-portal/commerce-hub/history",
+            "/vendor-portal/settlement-plan/history",
+            "/commerce-hub/history",
+          ],
+          icon: History,
+        },
+      ],
     },
   ];
 
@@ -218,7 +334,7 @@ export default function DashboardLayout({
     }
   };
 
-  const kelasInfo = getKelasBadge(brand?.settlement_class);
+  const kelasInfo = getKelasBadge(brand?.current_class || brand?.settlement_class);
 
   // Custom Breadcrumbs Generator
   const renderBreadcrumbs = () => {
@@ -281,10 +397,18 @@ export default function DashboardLayout({
     ) {
       items.push({ label: "Accounting & Payouts" });
     } else if (
-      pathname === "/vendor-portal/settlement-plan" ||
-      pathname === "/settlement-plan"
+      pathname.includes("/commerce-hub") ||
+      pathname.includes("/settlement-plan")
     ) {
-      items.push({ label: "Settlement Plan" });
+      items.push({
+        label: "Commerce Hub",
+        href: "/vendor-portal/commerce-hub/settlement-plan",
+      });
+      if (pathname.includes("/history")) {
+        items.push({ label: "Class Change History" });
+      } else {
+        items.push({ label: "Settlement Plan" });
+      }
     } else {
       const segments = pathname
         .replace(/^\/vendor-portal/, "")
@@ -674,6 +798,9 @@ export default function DashboardLayout({
                 (Sunday Cutoff)
               </span>
             </div>
+
+            {/* Notification Bell */}
+            <NotificationBell />
 
             {/* User Profile & Account Dropdown */}
             <div className="dropdown dropdown-end">

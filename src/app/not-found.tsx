@@ -22,6 +22,7 @@ export default function NotFoundPage() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       setCurrentPath(window.location.pathname + window.location.search);
+      document.title = 'VamoFlex Vendor | Page Not Found';
     }
   }, [pathname]);
 
