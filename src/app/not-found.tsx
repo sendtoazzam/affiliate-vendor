@@ -34,7 +34,7 @@ export default function NotFoundPage() {
 
         <div className="card-body p-6 sm:p-10 relative z-10 flex flex-col items-center">
           {/* Brand Logo */}
-          <Link href="/" className="mb-6 flex items-center justify-center">
+          <Link href="/vendor-portal/dashboard" className="mb-6 flex items-center justify-center">
             <img
               src="/images/logo/logo.png"
               alt="VAMOFLEX"
@@ -89,7 +89,7 @@ export default function NotFoundPage() {
             </button>
 
             <Link
-              href="/"
+              href="/vendor-portal/dashboard"
               className="btn btn-primary btn-sm px-6 text-white font-semibold shadow-md shadow-primary/20 gap-2 w-full sm:w-auto"
             >
               <Home className="w-4 h-4" />

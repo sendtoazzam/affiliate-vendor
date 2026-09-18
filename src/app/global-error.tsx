@@ -11,8 +11,8 @@ export default function GlobalError({
   reset: () => void;
 }) {
   return (
-    <html lang="en" data-theme="vamoflex">
-      <body>
+    <html lang="en" data-theme="vamoflex" suppressHydrationWarning>
+      <body suppressHydrationWarning>
         <ErrorPage error={error} reset={reset} />
       </body>
     </html>

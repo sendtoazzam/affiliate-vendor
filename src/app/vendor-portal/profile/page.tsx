@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -135,7 +135,7 @@ export default function VendorProfilePage() {
                 settlement tier with automatic weekly payouts.
               </p>
               <Link
-                href="/vendor-portal/accounting"
+                href="/vendor-portal/settlement-plan"
                 className="btn btn-outline btn-primary btn-sm w-full gap-2 text-xs font-semibold"
               >
                 <span>Request Tier Upgrade</span>

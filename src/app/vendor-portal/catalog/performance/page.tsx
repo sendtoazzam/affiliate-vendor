@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import ProductPerformancePage from '@/app/vendor-portal/products/performance/page';
+import ProductPerformancePage from '@/components/ProductPerformancePage';
 
-export default function CatalogPerformanceRoutePage() {
+export default function Page() {
   return <ProductPerformancePage />;
 }

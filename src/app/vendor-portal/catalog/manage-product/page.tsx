@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import ProductsPage from '@/app/vendor-portal/products/page';
+import ProductsListPage from '@/components/ProductsListPage';
 
-export default function CatalogManageProductRoutePage() {
-  return <ProductsPage />;
+export default function Page() {
+  return <ProductsListPage />;
 }

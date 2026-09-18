@@ -128,7 +128,7 @@ export const vendorApi = {
   // Class Change
   getClassChangeStatus: async () => {
     const response = await apiClient.get(
-      "/v1/vendor/portal/class-change-request",
+      "/v1/vendor/portal/class-change-requests/history",
     );
     return response.data;
   },
@@ -138,7 +138,7 @@ export const vendorApi = {
     reason?: string;
   }) => {
     const response = await apiClient.post(
-      "/v1/vendor/portal/class-change-request",
+      "/v1/vendor/portal/class-change-requests",
       data,
     );
     return response.data;

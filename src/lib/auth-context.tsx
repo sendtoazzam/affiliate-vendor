@@ -89,16 +89,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [token]);
 
   useEffect(() => {
-    const savedToken = localStorage.getItem('vf_vendor_token');
-    const savedUser = localStorage.getItem('vf_vendor_user');
-    const savedBrand = localStorage.getItem('vf_vendor_brand');
+    try {
+      const savedToken = localStorage.getItem('vf_vendor_token');
+      const savedUser = localStorage.getItem('vf_vendor_user');
+      const savedBrand = localStorage.getItem('vf_vendor_brand');
 
-    if (savedToken) {
-      setToken(savedToken);
-      if (savedUser) setUser(JSON.parse(savedUser));
-      if (savedBrand) setBrand(JSON.parse(savedBrand));
-      refreshBrand().finally(() => setIsLoading(false));
-    } else {
+      if (savedToken) {
+        setToken(savedToken);
+        if (savedUser) setUser(JSON.parse(savedUser));
+        if (savedBrand) setBrand(JSON.parse(savedBrand));
+        setIsLoading(false);
+        refreshBrand();
+      } else {
+        setIsLoading(false);
+      }
+    } catch (e) {
       setIsLoading(false);
     }
   }, []);

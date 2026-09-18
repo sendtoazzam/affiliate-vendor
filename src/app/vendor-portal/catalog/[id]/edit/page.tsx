@@ -1,8 +1,10 @@
 'use client';
 
 import React from 'react';
-import EditProductPage from '@/app/vendor-portal/products/[id]/edit/page';
+import EditProductPage from '@/components/EditProductPage';
 
-export default function CatalogEditProductPage() {
+export const dynamic = 'force-dynamic';
+
+export default function Page() {
   return <EditProductPage />;
 }

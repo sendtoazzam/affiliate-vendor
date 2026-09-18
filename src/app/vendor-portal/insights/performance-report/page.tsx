@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import ProductsReportingPage from '@/app/vendor-portal/reporting/products/page';
+import PerformanceReportPage from '@/components/PerformanceReportPage';
 
-export default function PerformanceReportPage() {
-  return <ProductsReportingPage />;
+export default function Page() {
+  return <PerformanceReportPage />;
 }

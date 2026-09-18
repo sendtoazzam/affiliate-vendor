@@ -27,6 +27,8 @@ import {
 } from "lucide-react";
 import ConfirmModal from "@/components/ConfirmModal";
 import SessionExpiredModal from "@/components/SessionExpiredModal";
+import VendorLoader from "@/components/VendorLoader";
+import PreloaderBar from "@/components/PreloaderBar";
 
 export default function DashboardLayout({
   children,
@@ -73,16 +75,7 @@ export default function DashboardLayout({
   }, [pathname]);
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-base-200">
-        <div className="flex flex-col items-center gap-3">
-          <span className="loading loading-spinner loading-lg text-primary"></span>
-          <p className="text-sm font-medium text-base-content/60">
-            Loading Vendor Hub...
-          </p>
-        </div>
-      </div>
-    );
+    return <VendorLoader label="VAMOFLEX Vendor Hub" />;
   }
 
   if (!isAuthenticated && !isSessionExpired) {
@@ -189,17 +182,39 @@ export default function DashboardLayout({
       aliases: ["/accounting"],
       icon: Receipt,
     },
+    {
+      type: "link" as const,
+      name: "Settlement Plan",
+      href: "/vendor-portal/settlement-plan",
+      aliases: ["/settlement-plan"],
+      icon: Layers,
+    },
   ];
 
   const getKelasBadge = (cls?: string) => {
     switch (cls) {
       case "kelas_a":
-        return { label: "Kelas A (45%)", color: "badge-info" };
+        return {
+          name: "Kelas A",
+          share: "45% Net Share",
+          label: "Kelas A (45%)",
+          color: "badge-info",
+        };
       case "kelas_c":
-        return { label: "Kelas C (55%)", color: "badge-accent" };
+        return {
+          name: "Kelas C",
+          share: "55% Net Share",
+          label: "Kelas C (55%)",
+          color: "badge-accent",
+        };
       case "kelas_b":
       default:
-        return { label: "Kelas B (50% - Standard)", color: "badge-primary" };
+        return {
+          name: "Kelas B",
+          share: "50% Net Share",
+          label: "Kelas B (50% - Standard)",
+          color: "badge-primary",
+        };
     }
   };
 
@@ -265,6 +280,11 @@ export default function DashboardLayout({
       pathname === "/accounting"
     ) {
       items.push({ label: "Accounting & Payouts" });
+    } else if (
+      pathname === "/vendor-portal/settlement-plan" ||
+      pathname === "/settlement-plan"
+    ) {
+      items.push({ label: "Settlement Plan" });
     } else {
       const segments = pathname
         .replace(/^\/vendor-portal/, "")
@@ -307,11 +327,14 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-base-200 flex">
+      {/* Top Preloader Bar */}
+      <PreloaderBar />
+
       {/* Sidebar */}
       <aside
         className={`${
-          isCollapsed ? "w-20" : "w-64"
-        } bg-base-100 border-r border-base-300 flex flex-col shrink-0 fixed inset-y-0 z-20 transition-all duration-200`}
+          isCollapsed ? "w-20 overflow-visible" : "w-64"
+        } bg-base-100 border-r border-base-300 flex flex-col shrink-0 fixed inset-y-0 z-30 transition-all duration-200`}
       >
         {/* Top Logo Container - Exact h-16 to match navbar border */}
         <div className="h-16 px-4 border-b border-base-300 flex items-center justify-center shrink-0">
@@ -357,18 +380,29 @@ export default function DashboardLayout({
             </div>
           </div>
         ) : (
-          <div
-            className="p-3 border-b border-base-300 flex justify-center bg-base-100"
-            title={`${brand?.name || "Partner Brand"} (${kelasInfo.label})`}
-          >
-            <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-              <Store className="w-4 h-4" />
+          <div className="relative group p-3 border-b border-base-300 flex justify-center bg-base-100 cursor-default">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <Store className="w-5 h-5" />
+            </div>
+            <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 hidden group-hover:flex flex-col z-[100] pointer-events-none bg-base-100 text-base-content border border-base-300 p-2.5 rounded-xl shadow-2xl min-w-[160px]">
+              <span className="text-xs font-bold truncate">
+                {brand?.name || "Partner Brand"}
+              </span>
+              <span
+                className={`badge ${kelasInfo.color} badge-xs font-semibold text-[9px] mt-1 w-fit`}
+              >
+                {kelasInfo.label}
+              </span>
             </div>
           </div>
         )}
 
         {/* Navigation - Full Width Edge-to-Edge with Submenus */}
-        <nav className="flex-1 py-3 px-0 space-y-1 overflow-y-auto">
+        <nav
+          className={`flex-1 py-3 px-0 space-y-1 ${
+            isCollapsed ? "overflow-visible" : "overflow-y-auto"
+          }`}
+        >
           {navSections.map((section) => {
             if (section.type === "link") {
               const isActive =
@@ -377,22 +411,43 @@ export default function DashboardLayout({
                   : pathname.startsWith(section.href);
               const Icon = section.icon;
 
+              if (isCollapsed) {
+                return (
+                  <div
+                    key={section.href}
+                    className="relative group w-full flex justify-center py-1"
+                  >
+                    <Link
+                      href={section.href}
+                      className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-150 ${
+                        isActive
+                          ? "bg-primary text-primary-content font-bold shadow-md shadow-primary/20"
+                          : "text-base-content/70 hover:bg-primary/10 hover:text-primary"
+                      }`}
+                    >
+                      <Icon className="w-5 h-5" />
+                    </Link>
+                    {/* Dropout tooltip on right */}
+                    <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 hidden group-hover:flex items-center z-[100] pointer-events-none">
+                      <div className="bg-base-100 text-base-content text-xs font-semibold px-3 py-2 rounded-xl shadow-2xl border border-base-300 whitespace-nowrap">
+                        {section.name}
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+
               return (
                 <Link
                   key={section.href}
                   href={section.href}
-                  title={isCollapsed ? section.name : undefined}
-                  className={`group relative flex items-center ${
-                    isCollapsed ? "justify-center px-0" : "justify-between px-6"
-                  } py-3 rounded-none text-sm transition-all duration-200 ${
+                  className={`group relative flex items-center justify-between px-6 py-3 rounded-none text-sm transition-all duration-200 ${
                     isActive
                       ? "bg-primary text-primary-content font-bold"
                       : "text-base-content/75 hover:bg-primary/5 hover:text-primary font-medium"
                   }`}
                 >
-                  <div
-                    className={`flex items-center ${isCollapsed ? "justify-center" : "gap-3.5"}`}
-                  >
+                  <div className="flex items-center gap-3.5">
                     <Icon
                       className={`w-5 h-5 transition-colors duration-200 ${
                         isActive
@@ -400,17 +455,15 @@ export default function DashboardLayout({
                           : "text-base-content/60 group-hover:text-primary"
                       }`}
                     />
-                    {!isCollapsed && <span>{section.name}</span>}
+                    <span>{section.name}</span>
                   </div>
-                  {!isCollapsed && (
-                    <ChevronRight
-                      className={`w-4 h-4 transition-all duration-200 ${
-                        isActive
-                          ? "opacity-90 translate-x-0 text-primary-content"
-                          : "opacity-0 -translate-x-2 text-primary group-hover:opacity-100 group-hover:translate-x-0"
-                      }`}
-                    />
-                  )}
+                  <ChevronRight
+                    className={`w-4 h-4 transition-all duration-200 ${
+                      isActive
+                        ? "opacity-90 translate-x-0 text-primary-content"
+                        : "opacity-0 -translate-x-2 text-primary group-hover:opacity-100 group-hover:translate-x-0"
+                    }`}
+                  />
                 </Link>
               );
             }
@@ -426,49 +479,53 @@ export default function DashboardLayout({
               return (
                 <div
                   key={section.key}
-                  className="dropdown dropdown-right w-full flex justify-center py-1"
+                  className="dropdown dropdown-right dropdown-hover w-full flex justify-center py-1"
                 >
                   <div
                     tabIndex={0}
                     role="button"
-                    className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${
+                    className={`w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer transition-all duration-150 ${
                       isGroupActive
-                        ? "bg-primary/15 text-primary font-bold"
-                        : "text-base-content/60 hover:bg-primary/5 hover:text-primary"
+                        ? "bg-primary text-primary-content font-bold shadow-md shadow-primary/20"
+                        : "text-base-content/70 hover:bg-primary/10 hover:text-primary"
                     }`}
                   >
                     <Icon className="w-5 h-5" />
                   </div>
-                  <ul
+                  <div
                     tabIndex={0}
-                    className="dropdown-content z-[100] menu p-2 shadow-2xl bg-base-100 rounded-box w-52 border border-base-300 ml-2"
+                    className="dropdown-content z-[100] menu p-2.5 shadow-2xl bg-base-100 rounded-2xl w-56 border border-base-300 ml-2 animate-in fade-in zoom-in-95 duration-150"
                   >
-                    <li className="menu-title text-xs font-bold text-base-content/80 uppercase px-3 py-1">
-                      {section.name}
-                    </li>
-                    {section.items.map((subItem) => {
-                      const isSubActive = isItemActive(
-                        subItem.href,
-                        subItem.aliases,
-                      );
-                      const SubIcon = subItem.icon;
-                      return (
-                        <li key={subItem.href}>
-                          <Link
-                            href={subItem.href}
-                            className={`flex items-center gap-2 text-xs py-2 ${
-                              isSubActive
-                                ? "active bg-primary text-primary-content font-bold"
-                                : ""
-                            }`}
-                          >
-                            <SubIcon className="w-4 h-4" />
-                            <span>{subItem.name}</span>
-                          </Link>
-                        </li>
-                      );
-                    })}
-                  </ul>
+                    <div className="px-3 py-1.5 mb-1 border-b border-base-200">
+                      <span className="text-[11px] font-bold text-primary uppercase tracking-wider">
+                        {section.name}
+                      </span>
+                    </div>
+                    <ul className="space-y-1 p-0">
+                      {section.items.map((subItem) => {
+                        const isSubActive = isItemActive(
+                          subItem.href,
+                          subItem.aliases,
+                        );
+                        const SubIcon = subItem.icon;
+                        return (
+                          <li key={subItem.href}>
+                            <Link
+                              href={subItem.href}
+                              className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+                                isSubActive
+                                  ? "bg-primary text-primary-content font-bold shadow-sm"
+                                  : "text-base-content/80 hover:bg-primary/10 hover:text-primary"
+                              }`}
+                            >
+                              <SubIcon className="w-4 h-4 shrink-0" />
+                              <span className="truncate">{subItem.name}</span>
+                            </Link>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
                 </div>
               );
             }
@@ -571,13 +628,22 @@ export default function DashboardLayout({
               </p>
             </div>
           )}
-          <button
-            onClick={() => setIsLogoutModalOpen(true)}
-            className="btn btn-ghost btn-sm btn-square text-error"
-            title="Sign Out"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
+          <div className={isCollapsed ? "relative group" : ""}>
+            <button
+              onClick={() => setIsLogoutModalOpen(true)}
+              className="btn btn-ghost btn-sm btn-square text-error hover:bg-error/10"
+              title="Sign Out"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+            {isCollapsed && (
+              <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 hidden group-hover:flex items-center z-[100] pointer-events-none">
+                <div className="bg-error text-error-content text-xs font-semibold px-3 py-1.5 rounded-lg shadow-xl whitespace-nowrap">
+                  Sign Out
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </aside>
 
@@ -588,7 +654,7 @@ export default function DashboardLayout({
         } min-w-0 transition-all duration-200`}
       >
         {/* Top Navbar */}
-        <header className="h-16 bg-base-100 border-b border-base-300 sticky top-0 z-10 px-2flex items-center justify-between">
+        <header className="h-16 bg-base-100 border-b border-base-300 sticky top-0 z-10 px-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
@@ -614,36 +680,66 @@ export default function DashboardLayout({
               <div
                 tabIndex={0}
                 role="button"
-                className="btn btn-ghost btn-sm gap-2 pl-2 pr-3 rounded-full border border-base-300 hover:bg-base-200"
+                className="btn btn-ghost btn-circle avatar"
+                title={brand?.name || user?.name || "Account"}
               >
-                <div className="avatar placeholder">
-                  <div className="bg-primary text-primary-content rounded-full w-7 h-7 flex items-center justify-center font-bold text-xs">
-                    {user?.name
-                      ? user.name.charAt(0).toUpperCase()
-                      : user?.username
-                      ? user.username.charAt(0).toUpperCase()
-                      : "V"}
-                  </div>
+                <div className="w-9 h-9 rounded-full ring-1 ring-base-300 bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
+                  {brand?.logo_url ? (
+                    <img
+                      src={brand.logo_url}
+                      alt={brand.name || "Brand"}
+                      className="w-full h-full object-cover rounded-full"
+                    />
+                  ) : (
+                    <span>
+                      {brand?.name
+                        ? brand.name.charAt(0).toUpperCase()
+                        : user?.name
+                        ? user.name.charAt(0).toUpperCase()
+                        : user?.username
+                        ? user.username.charAt(0).toUpperCase()
+                        : "V"}
+                    </span>
+                  )}
                 </div>
-                <div className="hidden md:flex flex-col items-start text-left">
-                  <span className="text-xs font-semibold leading-tight text-base-content max-w-[140px] truncate">
-                    {user?.name || user?.username || "Vendor Partner"}
-                  </span>
-                  <span className="text-[10px] text-base-content/60 leading-none truncate max-w-[140px]">
-                    {brand?.name || "Brand Partner"}
-                  </span>
-                </div>
-                <ChevronDown className="w-3.5 h-3.5 text-base-content/60" />
               </div>
               <ul
                 tabIndex={0}
-                className="dropdown-content z-50 menu p-2 shadow-xl bg-base-100 rounded-box w-56 border border-base-300 mt-2 space-y-1"
+                className="dropdown-content z-50 menu p-2 shadow-xl bg-base-100 rounded-2xl w-60 border border-base-300 mt-2 space-y-1"
               >
-                <li className="menu-title px-3 py-1">
-                  <span className="text-xs font-semibold text-base-content/80">
-                    Account
-                  </span>
+                <li className="menu-title p-0">
+                  <div className="flex items-center gap-3 px-3 py-2.5 text-left w-full hover:bg-transparent cursor-default">
+                    <div className="w-10 h-10 rounded-full ring-1 ring-base-300 bg-primary/10 text-primary flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden">
+                      {brand?.logo_url ? (
+                        <img
+                          src={brand.logo_url}
+                          alt={brand.name || "Brand"}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span>
+                          {brand?.name
+                            ? brand.name.charAt(0).toUpperCase()
+                            : user?.name
+                            ? user.name.charAt(0).toUpperCase()
+                            : user?.username
+                            ? user.username.charAt(0).toUpperCase()
+                            : "V"}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-col min-w-0 flex-1 text-left items-start justify-start">
+                      <span className="text-sm font-bold text-base-content leading-tight truncate text-left w-full block">
+                        {user?.name || user?.username || "Vendor"}
+                      </span>
+                      <span className="text-xs text-base-content/60 leading-tight truncate mt-0.5 text-left w-full block">
+                        {brand?.name || "Partner Brand"}
+                      </span>
+                    </div>
+                  </div>
                 </li>
+
+                <div className="divider my-0.5"></div>
                 <li>
                   <Link
                     href="/vendor-portal/profile"
@@ -662,7 +758,7 @@ export default function DashboardLayout({
                     Help & Support
                   </Link>
                 </li>
-                <div className="divider my-1"></div>
+                <div className="divider my-0.5"></div>
                 <li>
                   <button
                     type="button"
@@ -707,3 +803,4 @@ export default function DashboardLayout({
     </div>
   );
 }
+

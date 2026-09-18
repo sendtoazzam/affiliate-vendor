@@ -1,8 +1,9 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/lib/auth-context';
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth-context";
+import VendorLoader from "@/components/VendorLoader";
 
 export default function RootHomePage() {
   const router = useRouter();
@@ -10,20 +11,24 @@ export default function RootHomePage() {
 
   useEffect(() => {
     if (!isLoading) {
-      if (isAuthenticated) {
-        router.replace('/vendor-portal/dashboard');
-      } else {
-        router.replace('/login');
-      }
+      const target = isAuthenticated ? "/vendor-portal/dashboard" : "/login";
+      router.replace(target);
+
+      // Fallback timer in case router transition is interrupted
+      const timer = setTimeout(() => {
+        if (typeof window !== "undefined" && window.location.pathname === "/") {
+          window.location.replace(target);
+        }
+      }, 500);
+
+      return () => clearTimeout(timer);
     }
   }, [isAuthenticated, isLoading, router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-base-200">
-      <div className="flex flex-col items-center gap-3">
-        <span className="loading loading-spinner loading-lg text-primary"></span>
-        <p className="text-sm font-medium text-base-content/60">Redirecting to Vendor Hub...</p>
-      </div>
-    </div>
+    <VendorLoader
+      label="VAMOFLEX Vendor Hub"
+      sublabel="Redirecting to Vendor Hub..."
+    />
   );
 }

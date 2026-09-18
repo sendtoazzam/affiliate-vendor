@@ -89,6 +89,19 @@ export default function VendorDashboardPage() {
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto pb-12">
+      {/* Live Preloader Status Bar */}
+      {loading && (
+        <div className="w-full bg-base-100 rounded-2xl p-3.5 border border-base-300/80 shadow-sm flex items-center gap-3.5 animate-fade-in">
+          <div className="w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin shrink-0" />
+          <span className="text-xs font-semibold text-base-content/80">
+            Synchronizing live vendor metrics & settlements...
+          </span>
+          <div className="flex-1 h-1.5 bg-base-200 rounded-full overflow-hidden ml-2">
+            <div className="h-full bg-gradient-to-r from-primary via-secondary to-accent preloader-bar-indeterminate rounded-full w-1/3" />
+          </div>
+        </div>
+      )}
+
       {/* Welcome Banner */}
       <div className="card bg-gradient-to-r from-primary to-primary/85 text-primary-content shadow-xl overflow-hidden relative border border-primary/20">
         <div className="card-body p-6 sm:p-8 relative z-10">
@@ -107,10 +120,16 @@ export default function VendorDashboardPage() {
             </div>
 
             {/* Current Settlement Tier Pill */}
-            <div className="bg-base-100/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 min-w-[240px]">
-              <p className="text-[11px] font-semibold text-primary-content/75 uppercase tracking-wider mb-1">
-                Active Settlement Tier
-              </p>
+            <Link
+              href="/vendor-portal/settlement-plan"
+              className="bg-base-100/10 hover:bg-white/20 transition-colors backdrop-blur-md rounded-2xl p-4 border border-white/20 min-w-[240px] block"
+            >
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-[11px] font-semibold text-primary-content/75 uppercase tracking-wider">
+                  Active Settlement Tier
+                </p>
+                <span className="text-[10px] font-bold text-secondary uppercase underline">View Plans →</span>
+              </div>
               <div className="flex items-center justify-between">
                 <span className="text-lg font-bold text-white">{kelasInfo.name}</span>
                 <span className="badge badge-secondary font-bold text-xs px-2.5 py-1">
@@ -121,7 +140,7 @@ export default function VendorDashboardPage() {
                 <span>Next Weekly Payout:</span>
                 <strong className="text-white">Wednesday</strong>
               </div>
-            </div>
+            </Link>
           </div>
         </div>
         <div className="absolute right-0 bottom-0 translate-x-12 translate-y-12 w-64 h-64 bg-secondary/10 rounded-full blur-3xl pointer-events-none" />
@@ -304,7 +323,7 @@ export default function VendorDashboardPage() {
               <div>
                 <div className="flex items-center gap-2 text-primary font-bold text-sm mb-1">
                   <Receipt className="w-4 h-4" />
-                  <span>Accounting & Payouts</span>
+                  <span>Accounting & Settlements</span>
                 </div>
                 <p className="text-xs text-base-content/60">
                   Inspect weekly statements, verify bank details, or apply for a higher settlement class.
@@ -313,12 +332,21 @@ export default function VendorDashboardPage() {
               <div className="space-y-1.5 pt-2 border-t border-base-200">
                 <Link
                   href="/vendor-portal/accounting"
-                  className="group flex items-center justify-between text-xs py-2 px-3 rounded-lg bg-primary/5 hover:bg-primary/10 text-primary transition-all duration-200 font-bold"
+                  className="group flex items-center justify-between text-xs py-2 px-3 rounded-lg hover:bg-base-200 text-base-content/80 hover:text-primary transition-all duration-200 font-medium"
                 >
                   <span className="flex items-center gap-2">
-                    <Receipt className="w-3.5 h-3.5" /> View Payout Statements
+                    <Receipt className="w-3.5 h-3.5" /> Payout Statements
                   </span>
-                  <ChevronRight className="w-4 h-4 text-primary group-hover:translate-x-1 transition-all duration-200" />
+                  <ChevronRight className="w-4 h-4 text-base-content/40 group-hover:text-primary group-hover:translate-x-1 transition-all duration-200" />
+                </Link>
+                <Link
+                  href="/vendor-portal/settlement-plan"
+                  className="group flex items-center justify-between text-xs py-2 px-3 rounded-lg hover:bg-base-200 text-base-content/80 hover:text-primary transition-all duration-200 font-medium"
+                >
+                  <span className="flex items-center gap-2">
+                    <Layers className="w-3.5 h-3.5" /> Settlement Plan & Tiers
+                  </span>
+                  <ChevronRight className="w-4 h-4 text-base-content/40 group-hover:text-primary group-hover:translate-x-1 transition-all duration-200" />
                 </Link>
               </div>
             </div>
