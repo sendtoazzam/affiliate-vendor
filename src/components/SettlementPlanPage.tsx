@@ -23,6 +23,10 @@ import {
 export default function SettlementPlanPage() {
   const { brand, refreshBrand, vendorConfig, hasPermission } = useAuth();
 
+  const payoutDay = vendorConfig?.payout_day || 'Wednesday';
+  const cutoffDay = vendorConfig?.cutoff_day || 'Sunday';
+  const cutoffTime = vendorConfig?.cutoff_time || '11:59 PM';
+
   const [pendingChange, setPendingChange] = useState<any | null>(null);
   const [loadingChange, setLoadingChange] = useState(true);
   const [requestedClass, setRequestedClass] = useState<SettlementClass>('kelas_b');
@@ -70,8 +74,13 @@ export default function SettlementPlanPage() {
     pendingChange && pendingChange.status === 'pending'
   );
 
+  const isCooldownActive = Boolean(vendorConfig?.cooldown_active);
+  const cooldownDaysRemaining = vendorConfig?.cooldown_days_remaining || 0;
+  const cooldownEndsAt = vendorConfig?.cooldown_ends_at;
+
   const isPlanChangeAllowed =
     vendorConfig?.allow_plan_change !== false &&
+    !isCooldownActive &&
     hasPermission('vendor.settlement_plan.apply');
 
   const getClassName = (cls?: string) => {
@@ -318,6 +327,26 @@ export default function SettlementPlanPage() {
         </div>
       )}
 
+      {isCooldownActive && (
+        <div className="alert alert-warning py-3 px-4 rounded-2xl text-xs flex items-center justify-between gap-3 border border-warning/30 bg-warning/10">
+          <div className="flex items-center gap-2.5">
+            <Clock className="w-5 h-5 text-warning shrink-0" />
+            <div>
+              <p className="font-bold text-base-content">
+                Plan Change Window Active ({cooldownDaysRemaining} {cooldownDaysRemaining === 1 ? 'day' : 'days'} remaining)
+              </p>
+              <p className="text-base-content/70 text-[11px] mt-0.5">
+                Your settlement tier was adjusted recently. Next plan change application will be unlocked on{' '}
+                <strong>{formatDate(cooldownEndsAt)}</strong>.
+              </p>
+            </div>
+          </div>
+          <span className="badge badge-warning font-mono font-bold text-[10px] uppercase shrink-0">
+            {vendorConfig?.plan_change_cooldown_days || 14}-Day Window
+          </span>
+        </div>
+      )}
+
       {changeSuccess && (
         <div className="alert alert-success py-3 px-4 rounded-xl text-xs flex items-center gap-2">
           <CheckCircle className="w-4 h-4 shrink-0" />
@@ -340,12 +369,13 @@ export default function SettlementPlanPage() {
             pendingChange?.status === 'pending' &&
             pendingChange?.requested_class === p.id;
           const isSelected = requestedClass === p.id;
+          const isCardDisabled = hasPendingRequest || !isPlanChangeAllowed;
 
           return (
             <div
               key={p.id}
               onClick={() => {
-                if (!hasPendingRequest) {
+                if (!isCardDisabled && !isCurrent) {
                   setRequestedClass(p.id as SettlementClass);
                 }
               }}
@@ -356,6 +386,10 @@ export default function SettlementPlanPage() {
                     : isCurrent
                     ? 'border-primary/50 bg-base-100'
                     : 'border-base-300 bg-base-100 opacity-60 cursor-not-allowed'
+                  : !isPlanChangeAllowed
+                  ? isCurrent
+                    ? 'border-primary/50 bg-base-100 ring-2 ring-primary/20'
+                    : 'border-base-300 bg-base-100 opacity-60 cursor-not-allowed select-none'
                   : isSelected
                   ? 'border-primary ring-2 ring-primary/40 bg-primary/[0.04] shadow-md -translate-y-0.5 cursor-pointer'
                   : 'border-base-300 bg-base-100 hover:border-base-content/40 hover:shadow-sm cursor-pointer'
@@ -376,19 +410,19 @@ export default function SettlementPlanPage() {
                   <div className="flex items-center gap-1.5">
                     {isPendingTarget && (
                       <span className="badge badge-warning text-warning-content font-bold text-[10px] flex items-center gap-1 shadow-sm">
-                        <Clock className="w-3 h-3" />
+                        <Clock className="w-3.5 h-3.5" />
                         Requested
                       </span>
                     )}
                     {p.isRecommended && (
                       <span className="badge badge-warning text-warning-content font-bold text-[10px] flex items-center gap-1">
-                        <Sparkles className="w-3 h-3" />
+                        <Sparkles className="w-3.5 h-3.5" />
                         Recommended
                       </span>
                     )}
-                    {!hasPendingRequest && isSelected && (
+                    {!hasPendingRequest && isPlanChangeAllowed && isSelected && (
                       <span className="badge badge-primary text-white font-bold text-[10px] flex items-center gap-1 shadow-sm">
-                        <CheckCircle className="w-3 h-3" />
+                        <CheckCircle className="w-3.5 h-3.5" />
                         Selected
                       </span>
                     )}
@@ -447,12 +481,14 @@ export default function SettlementPlanPage() {
                 </div>
                 <button
                   type="button"
-                  disabled={hasPendingRequest || !isPlanChangeAllowed}
+                  disabled={hasPendingRequest || !isPlanChangeAllowed || isCurrent}
                   className={`btn btn-sm w-full text-xs font-bold gap-1.5 transition-all ${
                     isPendingTarget
                       ? 'btn-warning text-warning-content shadow-sm'
                       : isCurrent
                       ? 'btn-neutral text-white/90'
+                      : !isPlanChangeAllowed
+                      ? 'btn-outline border-base-300 text-base-content/40 cursor-not-allowed'
                       : isSelected
                       ? 'btn-primary text-white shadow-sm'
                       : 'btn-outline border-base-300 text-base-content/70 hover:btn-primary'
@@ -467,6 +503,11 @@ export default function SettlementPlanPage() {
                     <>
                       <CheckCircle className="w-3.5 h-3.5" />
                       <span>Current Active Plan</span>
+                    </>
+                  ) : !isPlanChangeAllowed ? (
+                    <>
+                      <Lock className="w-3.5 h-3.5" />
+                      <span>Select {p.name}</span>
                     </>
                   ) : isSelected ? (
                     <>
@@ -487,14 +528,24 @@ export default function SettlementPlanPage() {
       <div className="card bg-base-100 border border-base-300 shadow-sm relative overflow-hidden">
         {!isPlanChangeAllowed && (
           <div className="absolute inset-0 z-20 backdrop-blur-[2px] bg-base-100/85 flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-200">
-            <div className="w-12 h-12 rounded-2xl bg-error/10 text-error flex items-center justify-center mb-3 border border-error/20 shadow-sm">
-              <Lock className="w-6 h-6" />
+            <div
+              className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-3 border shadow-sm ${
+                isCooldownActive
+                  ? 'bg-warning/10 text-warning border-warning/20'
+                  : 'bg-error/10 text-error border-error/20'
+              }`}
+            >
+              {isCooldownActive ? <Clock className="w-6 h-6" /> : <Lock className="w-6 h-6" />}
             </div>
             <h4 className="text-base font-bold text-base-content tracking-tight">
-              Access Restricted
+              {isCooldownActive ? 'Plan Change Window Active' : 'Access Restricted'}
             </h4>
-            <p className="text-xs text-base-content/70 mt-1 max-w-sm">
-              Module is not available for the time being
+            <p className="text-xs text-base-content/70 mt-1 max-w-sm leading-relaxed">
+              {isCooldownActive
+                ? `Tier adjustment is currently on cooldown (${cooldownDaysRemaining} ${
+                    cooldownDaysRemaining === 1 ? 'day' : 'days'
+                  } remaining). Next change request unlocks on ${formatDate(cooldownEndsAt)}.`
+                : 'Module is not available for the time being'}
             </p>
           </div>
         )}
@@ -609,7 +660,7 @@ export default function SettlementPlanPage() {
                 <HelpCircle className="w-4 h-4 shrink-0" />
                 <span>
                   Policy: If approved, the new rate takes effect on{' '}
-                  <strong>next Wednesday's payment cycle</strong> covering the active Sunday cutoff.
+                  <strong>next {payoutDay}&apos;s payment cycle</strong> covering the active {cutoffDay} cutoff.
                 </span>
               </div>
 
@@ -716,7 +767,7 @@ export default function SettlementPlanPage() {
                   1. Weekly Cutoff & Effective Schedule
                 </h4>
                 <p className="leading-relaxed">
-                  Submitted tier changes do not take effect immediately upon submission. Upon review and approval by VAMOFLEX Merchant Operations, the approved rate applies starting from the subsequent weekly settlement cycle (Sunday 11:59 PM cutoff).
+                  Submitted tier changes do not take effect immediately upon submission. Upon review and approval by VAMOFLEX Merchant Operations, the approved rate applies starting from the subsequent weekly settlement cycle ({cutoffDay} {cutoffTime} cutoff).
                 </p>
               </div>
 

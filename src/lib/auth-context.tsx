@@ -7,6 +7,18 @@ import { useRouter } from 'next/navigation';
 
 interface VendorPortalConfig {
   allow_plan_change: boolean;
+  plan_change_cooldown_days?: number;
+  cooldown_active?: boolean;
+  cooldown_ends_at?: string;
+  cooldown_days_remaining?: number;
+  last_changed_at?: string;
+  payout_mode?: 'manual' | 'auto';
+  cutoff_day?: string;
+  cutoff_time?: string;
+  payout_day?: string;
+  payout_time?: string;
+  buffer_days?: number;
+  notify_vendor?: boolean;
 }
 
 interface AuthContextType {

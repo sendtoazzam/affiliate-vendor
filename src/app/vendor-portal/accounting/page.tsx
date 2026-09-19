@@ -18,11 +18,15 @@ import {
 } from 'lucide-react';
 
 export default function AccountingPage() {
-  const { brand } = useAuth();
+  const { brand, vendorConfig } = useAuth();
 
   const [statements, setStatements] = useState<SettlementStatement[]>([]);
   const [loadingStatements, setLoadingStatements] = useState(true);
   const [selectedStatement, setSelectedStatement] = useState<SettlementStatement | null>(null);
+
+  const payoutDay = vendorConfig?.payout_day || 'Wednesday';
+  const cutoffDay = vendorConfig?.cutoff_day || 'Sunday';
+  const cutoffTime = vendorConfig?.cutoff_time || '11:59 PM';
 
   const fetchStatements = async () => {
     try {
@@ -84,7 +88,7 @@ export default function AccountingPage() {
                 <span>Weekly Settlement Statements</span>
               </h2>
               <p className="text-xs text-base-content/60">
-                Generated every Wednesday covering Sunday 11:59 PM weekly cutoffs.
+                Generated every {payoutDay} covering {cutoffDay} {cutoffTime} weekly cutoffs.
               </p>
             </div>
             <button
@@ -123,7 +127,7 @@ export default function AccountingPage() {
                       <Receipt className="w-8 h-8 mx-auto mb-2 opacity-40" />
                       <p className="font-semibold text-sm text-base-content">No settlement statements yet</p>
                       <p className="text-xs text-base-content/60 mt-0.5">
-                        Statements will appear here automatically on Wednesday after your first sales cycle cutoff.
+                        Statements will appear here automatically on {payoutDay} after your first sales cycle cutoff.
                       </p>
                     </td>
                   </tr>

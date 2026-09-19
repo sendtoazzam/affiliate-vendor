@@ -1,36 +1,144 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# VAMOFLEX Vendor Portal (`vf-vendor-dashboard`)
 
-## Getting Started
+A modern, high-performance Partner Brand & Vendor Management Portal built with **Next.js (App Router)**, **TypeScript**, **Tailwind CSS**, and **DaisyUI**.
 
-First, run the development server:
+---
+
+## 🌟 Overview
+
+The **VAMOFLEX Vendor Portal** enables partner brands and vendors to seamlessly manage products, track multi-tier sales, review transparent Net Cleared Sales (NCS) analytics, and reconcile weekly automated settlement payouts.
+
+---
+
+## 🚀 Key Features
+
+### 1. Vendor Dashboard (`/vendor-portal/dashboard`)
+- **Key Performance Indicators (KPIs)**: Real-time Gross Merchandise Value (GMV), Settled Net Commissionable Sales (NCS), Estimated Brand Payout, and units dispatched.
+- **Active Settlement Tier**: Real-time display of the brand's settlement class (Kelas A: 45%, Kelas B: 50% Standard, Kelas C: 55%).
+- **Quick Action Hub**: Animated shortcut cards navigating to Catalog, Insights, and Accounting.
+- **Weekly Payout Notice**: Automated countdown to Wednesday payouts (Sunday midnight cutoff).
+
+### 2. Catalog Management (`/vendor-portal/catalog`)
+- **Manage Products** (`/vendor-portal/catalog/manage-product`):
+  - Search by product title or SKU.
+  - Category dropdown filter dynamically populated from active inventory.
+  - Stock level filtering (All / In-Stock / Out-of-Stock).
+  - Variant filtering (Simple vs. Multi-Variant).
+  - Quick-view modals: Product Details, Stock Allocation, and Variant SKU/Pricing tables.
+  - Excel (.xls) catalog export and batch product management.
+- **Add Product** (`/vendor-portal/catalog/add-product`): Create standard and variable products with SKU, categories, media, and pricing.
+- **NCS Leaderboard** (`/vendor-portal/catalog/performance`): Visual ranking of top revenue and NCS-generating products with contribution share progress bars.
+- **Catalog Breakdown** (`/vendor-portal/catalog/breakdown`): Detailed unit sales, itemized deductions (discounts, vouchers, refunds), settled NCS, stock health badges, and one-click XLS export.
+
+### 3. Insights & Analytics (`/vendor-portal/insights`)
+- **Sales & Settlement Report** (`/vendor-portal/insights/sales-report`):
+  - **NCS Waterfall Model**: Transparent formula visualization:
+    $$\text{Settled NCS} = \text{Gross GMV} - \text{Member Discounts} - \text{Eligible Platform Vouchers } (\le 40\%) - \text{Refunds}$$
+  - Breakdown of Net Brand Payout, Affiliate Bonus Distribution Pool, and Platform Service Fees.
+- **Performance Report** (`/vendor-portal/insights/performance-report`): Time-filtered sales volume and revenue velocity metrics.
+
+### 4. Accounting & Payouts (`/vendor-portal/accounting`)
+- Complete historical ledger of weekly payouts and bank disbursements.
+- Statement review, bank account verification, and settlement tier management.
+
+---
+
+## 🛠️ Tech Stack
+
+- **Framework**: [Next.js](https://nextjs.org/) (App Router, Turbopack)
+- **Language**: [TypeScript](https://www.typescriptlang.org/)
+- **Styling & UI**: [Tailwind CSS](https://tailwindcss.com/) & [DaisyUI](https://daisyui.com/)
+- **Icons**: [Lucide React](https://lucide.dev/)
+- **API Client**: Axios with centralized token management & automatic session expiry handling
+- **Exporting**: Clean XML/HTML-based spreadsheet export (`exportToXls`)
+
+---
+
+## 📦 Getting Started
+
+### Prerequisites
+- Node.js 18.x or 20.x
+- npm / pnpm / yarn
+- Running backend API instance (`affiliatex-api`)
+
+### Installation
+
+1. **Navigate to the dashboard directory**:
+   ```bash
+   cd vf-vendor-dashboard
+   ```
+
+2. **Install dependencies**:
+   ```bash
+   npm install
+   ```
+
+3. **Configure Environment Variables**:
+   Create a `.env.local` file in the root directory:
+   ```env
+   NEXT_PUBLIC_API_URL=http://localhost:8000/api
+   ```
+
+4. **Start the development server**:
+   ```bash
+   npm run dev
+   ```
+   Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+---
+
+## 🏗️ Build & Production
+
+To build the application for production:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+To run the production server:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run start
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+To run linting:
 
-## Learn More
+```bash
+npm run lint
+```
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 📁 Directory Structure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+vf-vendor-dashboard/
+├── src/
+│   ├── app/
+│   │   ├── (auth)/             # Login & password recovery routes
+│   │   ├── vendor-portal/
+│   │   │   ├── layout.tsx      # Sidebar navigation & breadcrumb generator
+│   │   │   ├── dashboard/      # Primary vendor analytics dashboard
+│   │   │   ├── catalog/        # Catalog management, leaderboard, breakdown
+│   │   │   ├── products/       # Products list, edit, and create forms
+│   │   │   ├── insights/       # Sales reports & NCS waterfall
+│   │   │   └── accounting/     # Payout statements & accounting
+│   ├── components/             # Reusable UI components (ProductForm, ConfirmModal, etc.)
+│   ├── lib/
+│   │   ├── api.ts              # Vendor API client & endpoints
+│   │   ├── auth-context.tsx    # Vendor session & authentication state
+│   │   ├── export-xls.ts       # Excel report generator
+│   │   └── types.ts            # TypeScript interfaces & definitions
+├── public/                     # Static assets, logos, and icons
+├── next.config.mjs             # Next.js configuration
+├── tailwind.config.ts          # Tailwind & DaisyUI theme settings
+└── package.json
+```
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🔒 Security & Guidelines
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Single Hub Central Logistics Fulfillment model.
+- Strictly read-only financial data access for vendor users with authenticated Bearer tokens.
+- Theme consistency powered by semantic DaisyUI theme tokens and responsive layouts.
