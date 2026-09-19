@@ -420,6 +420,12 @@ export default function SettlementPlanPage() {
                         Recommended
                       </span>
                     )}
+                    {!isPlanChangeAllowed && !isCurrent && (
+                      <span className="badge badge-warning badge-soft font-bold text-[10px] flex items-center gap-1 shadow-sm">
+                        <Lock className="w-3 h-3" />
+                        Restricted
+                      </span>
+                    )}
                     {!hasPendingRequest && isPlanChangeAllowed && isSelected && (
                       <span className="badge badge-primary text-white font-bold text-[10px] flex items-center gap-1 shadow-sm">
                         <CheckCircle className="w-3.5 h-3.5" />
@@ -507,7 +513,7 @@ export default function SettlementPlanPage() {
                   ) : !isPlanChangeAllowed ? (
                     <>
                       <Lock className="w-3.5 h-3.5" />
-                      <span>Select {p.name}</span>
+                      <span>Adjustment Restricted</span>
                     </>
                   ) : isSelected ? (
                     <>

@@ -26,6 +26,7 @@ import {
   HelpCircle,
   History,
   Percent,
+  Edit,
 } from "lucide-react";
 import ConfirmModal from "@/components/ConfirmModal";
 import SessionExpiredModal from "@/components/SessionExpiredModal";
@@ -34,6 +35,9 @@ import VendorLoader from "@/components/VendorLoader";
 import PreloaderBar from "@/components/PreloaderBar";
 import NotificationBell from "@/components/NotificationBell";
 import PayoutCyclePill from "@/components/PayoutCyclePill";
+import HeaderClockAnnouncement from "@/components/HeaderClockAnnouncement";
+import QuickActionFab from "@/components/QuickActionFab";
+import OnboardingTour from "@/components/OnboardingTour";
 import { firebaseMessaging } from "@/lib/firebase-messaging";
 
 export default function DashboardLayout({
@@ -48,6 +52,7 @@ export default function DashboardLayout({
     isLoading,
     isSessionExpired,
     hasPermission,
+    startOnboarding,
     logout,
     dismissSessionExpired,
   } = useAuth();
@@ -65,8 +70,10 @@ export default function DashboardLayout({
   useEffect(() => {
     if (!isLoading && !isAuthenticated && !isSessionExpired) {
       router.push("/login");
+    } else if (!isLoading && isAuthenticated && (user?.first_time_login || user?.must_change_password)) {
+      router.push("/first-time-setup");
     }
-  }, [isLoading, isAuthenticated, isSessionExpired, router]);
+  }, [isLoading, isAuthenticated, isSessionExpired, user, router]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -162,6 +169,9 @@ export default function DashboardLayout({
       ) {
         return "Settlement Plan";
       }
+      if (path.includes("/profile/edit")) {
+        return "Edit Profile";
+      }
       if (path.includes("/profile")) {
         return "Vendor Profile";
       }
@@ -231,12 +241,14 @@ export default function DashboardLayout({
       ],
       icon: LayoutDashboard,
       permission: "vendor.dashboard.view",
+      dataTour: "nav-dashboard",
     },
     {
       type: "group" as const,
       name: "Catalog",
       key: "catalog",
       icon: Package,
+      dataTour: "nav-catalog",
       items: [
         {
           name: "Manage Product",
@@ -244,6 +256,7 @@ export default function DashboardLayout({
           aliases: ["/vendor-portal/products", "/products"],
           icon: Boxes,
           permission: "vendor.catalog.view",
+          dataTour: "nav-manage-product",
         },
         {
           name: "Add Product",
@@ -251,6 +264,7 @@ export default function DashboardLayout({
           aliases: ["/vendor-portal/products/new", "/products/new"],
           icon: PlusCircle,
           permission: "vendor.catalog.create",
+          dataTour: "nav-add-product",
         },
         {
           name: "NCS Leaderboard",
@@ -261,6 +275,7 @@ export default function DashboardLayout({
           ],
           icon: TrendingUp,
           permission: "vendor.catalog.leaderboard",
+          dataTour: "nav-performance",
         },
         {
           name: "Catalog Breakdown",
@@ -268,6 +283,7 @@ export default function DashboardLayout({
           aliases: ["/vendor-portal/products/breakdown", "/products/breakdown"],
           icon: Layers,
           permission: "vendor.catalog.breakdown",
+          dataTour: "nav-breakdown",
         },
       ],
     },
@@ -276,6 +292,7 @@ export default function DashboardLayout({
       name: "Insights",
       key: "insights",
       icon: BarChart3,
+      dataTour: "nav-insights",
       items: [
         {
           name: "Sales Report",
@@ -283,6 +300,7 @@ export default function DashboardLayout({
           aliases: ["/vendor-portal/reporting", "/reporting"],
           icon: BarChart3,
           permission: "vendor.insights.sales",
+          dataTour: "nav-insights",
         },
         {
           name: "Performance Report",
@@ -290,6 +308,7 @@ export default function DashboardLayout({
           aliases: ["/vendor-portal/reporting/products", "/reporting/products"],
           icon: FileSpreadsheet,
           permission: "vendor.insights.performance",
+          dataTour: "nav-performance-report",
         },
       ],
     },
@@ -300,12 +319,14 @@ export default function DashboardLayout({
       aliases: ["/accounting"],
       icon: Receipt,
       permission: "vendor.accounting.view",
+      dataTour: "nav-accounting",
     },
     {
       type: "group" as const,
       name: "Commerce Hub",
       key: "commerce-hub",
       icon: Layers,
+      dataTour: "nav-commerce-hub",
       items: [
         {
           name: "Settlement Plan",
@@ -313,6 +334,7 @@ export default function DashboardLayout({
           aliases: ["/vendor-portal/settlement-plan", "/settlement-plan"],
           icon: Percent,
           permission: "vendor.settlement_plan.view",
+          dataTour: "nav-settlement-plan",
         },
         {
           name: "Class Change History",
@@ -324,6 +346,7 @@ export default function DashboardLayout({
           ],
           icon: History,
           permission: "vendor.settlement_plan.history",
+          dataTour: "nav-history",
         },
       ],
     },
@@ -530,7 +553,7 @@ export default function DashboardLayout({
 
         {/* Partner Brand Section (Below Border) */}
         {!isCollapsed ? (
-          <div className="p-4 border-b border-base-300 bg-base-100">
+          <div data-tour="brand-badge" className="p-4 border-b border-base-300 bg-base-100">
             <div className="flex items-center gap-2.5 p-2.5 bg-base-200/80 rounded-xl border border-base-300/60">
               <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
                 <Store className="w-4 h-4" />
@@ -550,7 +573,7 @@ export default function DashboardLayout({
             </div>
           </div>
         ) : (
-          <div className="relative group p-3 border-b border-base-300 flex justify-center bg-base-100 cursor-default">
+          <div data-tour="brand-badge" className="relative group p-3 border-b border-base-300 flex justify-center bg-base-100 cursor-default">
             <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
               <Store className="w-5 h-5" />
             </div>
@@ -585,6 +608,7 @@ export default function DashboardLayout({
                 return (
                   <div
                     key={section.href}
+                    data-tour={section.dataTour}
                     className="relative group w-full flex justify-center py-1"
                   >
                     <Link
@@ -611,6 +635,7 @@ export default function DashboardLayout({
                 <Link
                   key={section.href}
                   href={section.href}
+                  data-tour={section.dataTour}
                   className={`group relative flex items-center justify-between px-6 py-3 rounded-none text-sm transition-all duration-200 ${
                     isActive
                       ? "bg-primary text-primary-content font-bold"
@@ -705,6 +730,7 @@ export default function DashboardLayout({
                 {/* Group Header Trigger */}
                 <button
                   type="button"
+                  data-tour={section.dataTour}
                   onClick={() => toggleSubmenu(section.key)}
                   className={`w-full flex items-center justify-between px-6 py-3 text-sm font-semibold transition-colors duration-150 ${
                     isGroupActive
@@ -739,6 +765,7 @@ export default function DashboardLayout({
                         <Link
                           key={subItem.href}
                           href={subItem.href}
+                          data-tour={subItem.dataTour}
                           className={`group flex items-center justify-between pl-12 pr-6 py-2.5 text-xs transition-all duration-150 ${
                             isSubActive
                               ? "bg-primary text-primary-content font-bold shadow-sm"
@@ -783,9 +810,9 @@ export default function DashboardLayout({
         )}
 
         {/* Fixed Bottom Build & Version Info */}
-        <div className="h-[72px] border-t border-base-300 bg-base-100/60 shrink-0 flex items-center justify-center px-3.5">
+        <div className="h-[72px] border-t border-base-300 bg-base-100/60 shrink-0 flex items-center justify-start px-5">
           {!isCollapsed ? (
-            <div className="text-center space-y-0.5">
+            <div className="text-left space-y-0.5 w-full">
               <p className="text-xs font-bold text-base-content/85 tracking-wide">
                 VF Vendor <span className="font-mono text-primary font-bold">v0.1.0</span>
               </p>
@@ -794,7 +821,7 @@ export default function DashboardLayout({
               </p>
             </div>
           ) : (
-            <div className="flex justify-center relative group">
+            <div className="flex justify-center w-full relative group">
               <span className="text-[10px] font-mono font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">
                 v0.1.0
               </span>
@@ -815,26 +842,33 @@ export default function DashboardLayout({
         } min-w-0 transition-all duration-200`}
       >
         {/* Top Navbar */}
-        <header className="h-16 bg-base-100 border-b border-base-300 sticky top-0 z-30 px-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <header className="h-16 bg-base-100 border-b border-base-300 sticky top-0 z-30 px-4 sm:px-6 flex items-center justify-between gap-3 sm:gap-4">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
-              className="btn btn-ghost btn-sm btn-square text-base-content/70 hover:text-base-content"
+              className="btn btn-ghost btn-sm btn-square text-base-content/70 hover:text-base-content shrink-0"
               title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
               <PanelLeft className="w-5 h-5" />
             </button>
+
+            {/* Live Clock, Hijri Calendar & Announcement Bar */}
+            <HeaderClockAnnouncement />
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4 shrink-0">
             {/* Dynamic Weekly Payout Cycle Pill */}
-            <PayoutCyclePill />
+            <div data-tour="payout-cycle">
+              <PayoutCyclePill />
+            </div>
 
             {/* Notification Bell */}
-            <NotificationBell />
+            <div data-tour="notifications">
+              <NotificationBell />
+            </div>
 
             {/* User Profile & Account Dropdown */}
-            <div className="dropdown dropdown-end">
+            <div className="dropdown dropdown-end" data-tour="user-menu">
               <div
                 tabIndex={0}
                 role="button"
@@ -909,12 +943,31 @@ export default function DashboardLayout({
                 </li>
                 <li>
                   <Link
+                    href="/vendor-portal/profile/edit"
+                    className="flex items-center gap-2.5 py-2 text-xs font-medium"
+                  >
+                    <Edit className="w-4 h-4 text-base-content/70" />
+                    Edit Profile
+                  </Link>
+                </li>
+                <li>
+                  <Link
                     href="/vendor-portal/support"
                     className="flex items-center gap-2.5 py-2 text-xs font-medium"
                   >
                     <HelpCircle className="w-4 h-4 text-base-content/70" />
                     Help & Support
                   </Link>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => startOnboarding()}
+                    className="flex items-center gap-2.5 py-2 text-xs font-semibold text-primary hover:bg-primary/10 w-full text-left"
+                  >
+                    <Sparkles className="w-4 h-4 text-primary" />
+                    <span>Interactive Portal Tour</span>
+                  </button>
                 </li>
                 <div className="divider my-0.5"></div>
                 <li>
@@ -997,6 +1050,16 @@ export default function DashboardLayout({
         cancelText="Cancel"
         variant="primary"
         icon="logout"
+      />
+
+      {/* Floating Quick Menu (Bottom Right) */}
+      <div data-tour="quick-fab">
+        <QuickActionFab />
+      </div>
+
+      {/* Interactive Onboarding Walkthrough Tour */}
+      <OnboardingTour
+        onExpandGroup={(groupKey) => setOpenSubmenu(groupKey)}
       />
 
       {/* Session Expired / Token Invalid Modal */}

@@ -44,6 +44,20 @@ export const vendorApi = {
     return response.data;
   },
 
+  sendFirstTimeOtp: async () => {
+    const response = await apiClient.post("/v1/vendor/portal/first-time-setup/send-otp");
+    return response.data;
+  },
+
+  updateFirstTimePassword: async (data: {
+    otp: string;
+    password: string;
+    password_confirmation: string;
+  }) => {
+    const response = await apiClient.post("/v1/vendor/portal/first-time-setup/update-password", data);
+    return response.data;
+  },
+
   forgotPassword: async (data: {
     identifier: string;
     login_type: "email" | "username";
@@ -59,6 +73,11 @@ export const vendorApi = {
 
   getProfile: async () => {
     const response = await apiClient.get("/v1/vendor/portal/profile");
+    return response.data;
+  },
+
+  updateProfile: async (data: any) => {
+    const response = await apiClient.put("/v1/vendor/portal/profile", data);
     return response.data;
   },
 
@@ -199,6 +218,19 @@ export const vendorApi = {
         return error.response.data.data;
       }
       return null;
+    }
+  },
+
+  // Announcements
+  getAnnouncements: async (categories: string[] = ["global", "vf-vendor"]) => {
+    try {
+      const response = await apiClient.get("/v1/public/announcements", {
+        params: { categories: categories.join(",") },
+      });
+      const resData = response.data?.data || response.data;
+      return Array.isArray(resData) ? resData : [];
+    } catch {
+      return [];
     }
   },
 };

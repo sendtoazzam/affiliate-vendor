@@ -15,10 +15,12 @@ import {
   ArrowRight,
   CheckCircle2,
   Calendar,
+  Lock,
+  Edit,
 } from 'lucide-react';
 
 export default function VendorProfilePage() {
-  const { user, brand, refreshBrand } = useAuth();
+  const { user, brand, refreshBrand, vendorConfig } = useAuth();
   const [profileData, setProfileData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -42,6 +44,18 @@ export default function VendorProfilePage() {
 
   const activeBrand = profileData?.brand || brand;
 
+  const isPlanChangeAllowed = Boolean(
+    (profileData?.config?.allow_plan_change ?? vendorConfig?.allow_plan_change ?? true) &&
+    !(profileData?.config?.cooldown_active ?? vendorConfig?.cooldown_active)
+  );
+  const cooldownActive = Boolean(
+    profileData?.config?.cooldown_active ?? vendorConfig?.cooldown_active
+  );
+  const cooldownDaysRemaining =
+    profileData?.config?.cooldown_days_remaining ??
+    vendorConfig?.cooldown_days_remaining ??
+    0;
+
   return (
     <div className="space-y-6 max-w-5xl">
       {/* Header */}
@@ -52,11 +66,14 @@ export default function VendorProfilePage() {
             Manage your vendor account details, partner brand identity and settlement banking
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="badge badge-success badge-soft font-semibold text-xs py-2 px-3 gap-1.5">
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            Verified Brand Partner
-          </span>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/vendor-portal/profile/edit"
+            className="btn btn-primary btn-sm text-white gap-2 font-semibold shadow-sm"
+          >
+            <Edit className="w-3.5 h-3.5" />
+            <span>Edit Profile</span>
+          </Link>
         </div>
       </div>
 
@@ -117,11 +134,47 @@ export default function VendorProfilePage() {
                   <span className="badge badge-sm badge-ghost font-medium">Vendor Manager</span>
                 </div>
               </div>
+
+              <div className="w-full mt-4 pt-3 border-t border-base-200">
+                <Link
+                  href="/vendor-portal/profile/edit"
+                  className="btn btn-outline btn-xs w-full gap-1.5 font-semibold text-base-content/70 hover:btn-primary"
+                >
+                  <Edit className="w-3 h-3" />
+                  <span>Edit Account Details</span>
+                </Link>
+              </div>
             </div>
           </div>
 
           {/* Settlement Class Info Card */}
-          <div className="card bg-base-100 border border-base-300 shadow-sm">
+          <div className="card bg-base-100 border border-base-300 shadow-sm relative overflow-hidden">
+            {!isPlanChangeAllowed && (
+              <div className="absolute inset-0 bg-base-100/80 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center p-5 text-center border-2 border-warning/40 rounded-2xl">
+                <div className="w-10 h-10 rounded-xl bg-warning/15 text-warning flex items-center justify-center mb-2 shadow-sm">
+                  <Lock className="w-5 h-5" />
+                </div>
+                <span className="badge badge-warning badge-sm font-bold uppercase tracking-wider text-[10px]">
+                  Restricted
+                </span>
+                <h4 className="text-xs font-bold text-base-content mt-1.5">
+                  Tier Adjustment Locked
+                </h4>
+                <p className="text-[11px] text-base-content/70 mt-1 max-w-[210px] leading-snug">
+                  {cooldownActive
+                    ? `Cooldown active (${cooldownDaysRemaining} days remaining before next allowed adjustment).`
+                    : 'Plan modifications are temporarily disabled by platform administration.'}
+                </p>
+                <Link
+                  href="/vendor-portal/settlement-plan"
+                  className="btn btn-xs btn-outline border-base-300 text-base-content/80 hover:btn-primary mt-3 gap-1 font-semibold"
+                >
+                  <span>View Settlement Rules</span>
+                  <ArrowRight className="w-3 h-3" />
+                </Link>
+              </div>
+            )}
+
             <div className="card-body p-6">
               <div className="flex items-center gap-2 mb-3">
                 <Award className="w-5 h-5 text-primary" />
@@ -155,6 +208,13 @@ export default function VendorProfilePage() {
                   <Building2 className="w-5 h-5 text-primary" />
                   <h3 className="font-bold text-sm text-base-content">Brand Information</h3>
                 </div>
+                <Link
+                  href="/vendor-portal/profile/edit"
+                  className="btn btn-ghost btn-xs text-primary gap-1 font-semibold"
+                >
+                  <Edit className="w-3 h-3" />
+                  <span>Edit</span>
+                </Link>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
@@ -187,6 +247,13 @@ export default function VendorProfilePage() {
                     <p className="text-[11px] text-base-content/60">Weekly settlement statements are disbursed to this bank account</p>
                   </div>
                 </div>
+                <Link
+                  href="/vendor-portal/profile/edit"
+                  className="btn btn-ghost btn-xs text-primary gap-1 font-semibold"
+                >
+                  <Edit className="w-3 h-3" />
+                  <span>Edit</span>
+                </Link>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
@@ -221,6 +288,13 @@ export default function VendorProfilePage() {
                   <Phone className="w-5 h-5 text-primary" />
                   <h3 className="font-bold text-sm text-base-content">Official Brand Contact</h3>
                 </div>
+                <Link
+                  href="/vendor-portal/profile/edit"
+                  className="btn btn-ghost btn-xs text-primary gap-1 font-semibold"
+                >
+                  <Edit className="w-3 h-3" />
+                  <span>Edit</span>
+                </Link>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">

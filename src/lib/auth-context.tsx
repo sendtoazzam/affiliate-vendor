@@ -31,6 +31,11 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   isSessionExpired: boolean;
+  onboardingCompleted: boolean;
+  isOnboardingOpen: boolean;
+  startOnboarding: () => void;
+  closeOnboarding: () => void;
+  completeOnboarding: () => Promise<void>;
   login: (
     token: string,
     user: any,
@@ -39,6 +44,7 @@ interface AuthContextType {
     config?: VendorPortalConfig
   ) => void;
   logout: () => void;
+  updateUser: (updatedUser: any) => void;
   refreshBrand: () => Promise<void>;
   dismissSessionExpired: () => void;
   hasPermission: (permission: string | string[]) => boolean;
@@ -59,6 +65,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSessionExpired, setIsSessionExpired] = useState(false);
+  const [onboardingCompleted, setOnboardingCompleted] = useState<boolean>(true);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(false);
   const router = useRouter();
 
   const triggerSessionExpired = React.useCallback(() => {
@@ -84,10 +92,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const refreshBrand = async () => {
     try {
-      const data = await vendorApi.getDashboard();
+      const data = await vendorApi.getProfile();
       if (data.brand) {
         setBrand(data.brand);
         localStorage.setItem("vf_vendor_brand", JSON.stringify(data.brand));
+      }
+      if (data.user) {
+        setUser(data.user);
+        localStorage.setItem("vf_vendor_user", JSON.stringify(data.user));
+        const isDone = data.user.onboarding_completed !== undefined
+          ? Boolean(data.user.onboarding_completed)
+          : true;
+        setOnboardingCompleted(isDone);
+        if (!isDone) {
+          setIsOnboardingOpen(true);
+        }
       }
       if (data.permissions) {
         setPermissions(data.permissions);
@@ -110,6 +129,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       if (err.response?.status === 401) {
         triggerSessionExpired();
       }
+    }
+  };
+
+  const startOnboarding = () => {
+    setIsOnboardingOpen(true);
+  };
+
+  const closeOnboarding = () => {
+    setIsOnboardingOpen(false);
+  };
+
+  const completeOnboarding = async () => {
+    try {
+      await vendorApi.updateProfile({ onboarding_completed: true });
+      setOnboardingCompleted(true);
+      setIsOnboardingOpen(false);
+      if (user) {
+        const updatedUser = { ...user, onboarding_completed: true };
+        setUser(updatedUser);
+        localStorage.setItem("vf_vendor_user", JSON.stringify(updatedUser));
+      }
+    } catch (err) {
+      console.error("Failed to persist onboarding completion:", err);
+      setOnboardingCompleted(true);
+      setIsOnboardingOpen(false);
     }
   };
 
@@ -137,7 +181,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             const savedBrand = localStorage.getItem("vf_vendor_brand");
             const savedPermissions = localStorage.getItem("vf_vendor_permissions");
             const savedConfig = localStorage.getItem("vf_vendor_config");
-            if (savedUser) setUser(JSON.parse(savedUser));
+            if (savedUser) {
+              const parsedUser = JSON.parse(savedUser);
+              setUser(parsedUser);
+              if (parsedUser.onboarding_completed !== undefined) {
+                setOnboardingCompleted(Boolean(parsedUser.onboarding_completed));
+              }
+            }
             if (savedBrand) setBrand(JSON.parse(savedBrand));
             if (savedPermissions) setPermissions(JSON.parse(savedPermissions));
             if (savedConfig) setVendorConfig(JSON.parse(savedConfig));
@@ -192,7 +242,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       if (savedToken) {
         setToken(savedToken);
-        if (savedUser) setUser(JSON.parse(savedUser));
+        if (savedUser) {
+          const parsedUser = JSON.parse(savedUser);
+          setUser(parsedUser);
+          if (parsedUser.onboarding_completed !== undefined) {
+            const isDone = Boolean(parsedUser.onboarding_completed);
+            setOnboardingCompleted(isDone);
+            if (!isDone) {
+              setIsOnboardingOpen(true);
+            }
+          }
+        }
         if (savedBrand) setBrand(JSON.parse(savedBrand));
         if (savedPermissions) setPermissions(JSON.parse(savedPermissions));
         if (savedConfig) setVendorConfig(JSON.parse(savedConfig));
@@ -232,6 +292,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
     setToken(newToken);
     setUser(newUser);
+    const isDone = newUser?.onboarding_completed !== undefined
+      ? Boolean(newUser.onboarding_completed)
+      : true;
+    setOnboardingCompleted(isDone);
+    if (!isDone) {
+      setIsOnboardingOpen(true);
+    }
     setIsSessionExpired(false);
     refreshBrand();
   };
@@ -250,7 +317,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setRoles([]);
     setPermissions([]);
     setIsSessionExpired(false);
+    setIsOnboardingOpen(false);
     router.push("/login");
+  };
+
+  const updateUser = (updatedUser: any) => {
+    setUser((prev: any) => {
+      const merged = { ...prev, ...updatedUser };
+      localStorage.setItem("vf_vendor_user", JSON.stringify(merged));
+      return merged;
+    });
   };
 
   const hasPermission = React.useCallback(
@@ -295,8 +371,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         isLoading,
         isAuthenticated: !!token,
         isSessionExpired,
+        onboardingCompleted,
+        isOnboardingOpen,
+        startOnboarding,
+        closeOnboarding,
+        completeOnboarding,
         login,
         logout,
+        updateUser,
         refreshBrand,
         dismissSessionExpired,
         hasPermission,

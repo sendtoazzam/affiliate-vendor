@@ -7,6 +7,7 @@ import { vendorApi } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { Lock, Mail, User, AlertCircle, ArrowRight } from "lucide-react";
 import MaintenanceModal, { MaintenanceData } from "@/components/MaintenanceModal";
+import LoginPreparingModal from "@/components/LoginPreparingModal";
 
 export default function LoginPage() {
   const [loginMethod, setLoginMethod] = useState<"email" | "username">("username");
@@ -18,6 +19,10 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [maintenanceData, setMaintenanceData] = useState<MaintenanceData | null>(null);
   const [isRefreshingMaintenance, setIsRefreshingMaintenance] = useState(false);
+  const [isPreparing, setIsPreparing] = useState(false);
+  const [isFirstTime, setIsFirstTime] = useState(false);
+  const [loggedInBrand, setLoggedInBrand] = useState<string | null>(null);
+  const [loggedInUser, setLoggedInUser] = useState<string | null>(null);
   const router = useRouter();
   const { login } = useAuth();
 
@@ -102,8 +107,17 @@ export default function LoginPage() {
         keepLoggedIn ? "true" : "false"
       );
 
+      const isFirstTimeLogin = Boolean(
+        user?.first_time_login ||
+        user?.must_change_password ||
+        response?.must_change_password
+      );
+      setIsFirstTime(isFirstTimeLogin);
+
       login(token, user, brand);
-      router.push("/vendor-portal/dashboard");
+      setLoggedInBrand(brand?.name || user?.brand_name || null);
+      setLoggedInUser(user?.name || user?.username || null);
+      setIsPreparing(true);
     } catch (err: any) {
       console.error("Login error:", err);
       if (err.response?.status === 503 || err.response?.data?.code === "maintenance") {
@@ -121,9 +135,15 @@ export default function LoginPage() {
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-base-200 via-base-100 to-base-300 flex items-center justify-center p-4">
-      <div className="card w-full max-w-md bg-base-100 shadow-2xl border border-base-300">
-        <div className="card-body p-8">
+    <div
+      suppressHydrationWarning
+      className="min-h-screen bg-gradient-to-br from-base-200 via-base-100 to-base-300 flex items-center justify-center p-4"
+    >
+      <div
+        suppressHydrationWarning
+        className="card w-full max-w-md bg-base-100 shadow-2xl border border-base-300"
+      >
+        <div suppressHydrationWarning className="card-body p-8">
           <div className="flex flex-col items-center text-center mb-6">
             <img
               src="/images/logo/logo.png"
@@ -294,11 +314,27 @@ export default function LoginPage() {
           </div>
 
           <div className="divider my-4 text-xs text-base-content/30" />
-          <p className="text-center text-[11px] text-base-content/50">
+          <p
+            suppressHydrationWarning
+            className="text-center text-[11px] text-base-content/50"
+          >
             &copy; {new Date().getFullYear()} VAMOFLEX. All rights reserved.
           </p>
         </div>
       </div>
+
+      <LoginPreparingModal
+        isOpen={isPreparing}
+        brandName={loggedInBrand}
+        userName={loggedInUser}
+        onComplete={() => {
+          if (isFirstTime) {
+            router.push("/first-time-setup");
+          } else {
+            router.push("/vendor-portal/dashboard");
+          }
+        }}
+      />
 
       <MaintenanceModal
         isOpen={isMaintenanceActive}
