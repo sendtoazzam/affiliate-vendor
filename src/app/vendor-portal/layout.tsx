@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import ConfirmModal from "@/components/ConfirmModal";
 import SessionExpiredModal from "@/components/SessionExpiredModal";
+import IdleChecker from "@/components/IdleChecker";
 import VendorLoader from "@/components/VendorLoader";
 import PreloaderBar from "@/components/PreloaderBar";
 import NotificationBell from "@/components/NotificationBell";
@@ -981,6 +982,9 @@ export default function DashboardLayout({
           </div>
         </footer>
       </div>
+
+      {/* Session Inactivity / Idle Checker */}
+      <IdleChecker />
 
       {/* Logout Confirmation Modal */}
       <ConfirmModal

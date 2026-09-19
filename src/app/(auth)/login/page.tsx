@@ -97,6 +97,11 @@ export default function LoginPage() {
         throw new Error("Authentication succeeded but no token was returned.");
       }
 
+      localStorage.setItem(
+        "vf_vendor_remember_me",
+        keepLoggedIn ? "true" : "false"
+      );
+
       login(token, user, brand);
       router.push("/vendor-portal/dashboard");
     } catch (err: any) {

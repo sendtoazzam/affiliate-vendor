@@ -67,6 +67,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     localStorage.removeItem("vf_vendor_brand");
     localStorage.removeItem("vf_vendor_permissions");
     localStorage.removeItem("vf_vendor_config");
+    localStorage.removeItem("vf_vendor_remember_me");
+    localStorage.removeItem("vf_vendor_last_activity");
     setToken(null);
     setUser(null);
     setBrand(null);
@@ -116,13 +118,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       triggerSessionExpired();
     };
 
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "vf_vendor_token") {
+        if (!e.newValue) {
+          // Token removed in another tab
+          setToken(null);
+          setUser(null);
+          setBrand(null);
+          setRoles([]);
+          setPermissions([]);
+          setIsSessionExpired(false);
+          router.push("/login");
+        } else if (e.newValue && e.newValue !== token) {
+          // Logged in from another tab
+          setToken(e.newValue);
+          try {
+            const savedUser = localStorage.getItem("vf_vendor_user");
+            const savedBrand = localStorage.getItem("vf_vendor_brand");
+            const savedPermissions = localStorage.getItem("vf_vendor_permissions");
+            const savedConfig = localStorage.getItem("vf_vendor_config");
+            if (savedUser) setUser(JSON.parse(savedUser));
+            if (savedBrand) setBrand(JSON.parse(savedBrand));
+            if (savedPermissions) setPermissions(JSON.parse(savedPermissions));
+            if (savedConfig) setVendorConfig(JSON.parse(savedConfig));
+          } catch {
+            // ignore JSON parse errors
+          }
+          setIsSessionExpired(false);
+        }
+      }
+    };
+
     window.addEventListener("vf:session-expired", handleSessionExpiredEvent);
-    return () =>
+    window.addEventListener("storage", handleStorageChange);
+    return () => {
       window.removeEventListener(
         "vf:session-expired",
         handleSessionExpiredEvent
       );
-  }, [triggerSessionExpired]);
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, [triggerSessionExpired, token, router]);
 
   // Periodic Token Verification Checker
   useEffect(() => {
@@ -206,6 +242,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     localStorage.removeItem("vf_vendor_brand");
     localStorage.removeItem("vf_vendor_permissions");
     localStorage.removeItem("vf_vendor_config");
+    localStorage.removeItem("vf_vendor_remember_me");
+    localStorage.removeItem("vf_vendor_last_activity");
     setToken(null);
     setUser(null);
     setBrand(null);
