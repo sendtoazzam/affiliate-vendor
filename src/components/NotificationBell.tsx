@@ -69,9 +69,14 @@ export default function NotificationBell() {
     setIsLoading(true);
     try {
       const res = await vendorApi.getNotifications({ page: 1, per_page: 20 });
-      const items: VendorNotification[] = Array.isArray(res)
-        ? res
-        : res.data || [];
+      let items: VendorNotification[] = [];
+      if (Array.isArray(res)) {
+        items = res;
+      } else if (Array.isArray((res as any)?.data?.data)) {
+        items = (res as any).data.data;
+      } else if (Array.isArray((res as any)?.data)) {
+        items = (res as any).data;
+      }
       setNotifications(items);
       const unread = items.filter((n) => !n.read_at).length;
       setUnreadCount(unread);
@@ -250,7 +255,7 @@ export default function NotificationBell() {
         badgeColor: "badge-error",
         category: "Class Change",
         actionLabel: "View Settlement Plan",
-        targetUrl: "/vendor-portal/commerce-hub/settlement-plan",
+        targetUrl: "/vendor-portal/settlement-plan",
       };
     }
 

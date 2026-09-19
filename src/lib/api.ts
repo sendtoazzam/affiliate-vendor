@@ -147,7 +147,12 @@ export const vendorApi = {
   // Notifications
   getNotifications: async (params?: { page?: number; per_page?: number }) => {
     const response = await apiClient.get("/v1/notifications", { params });
-    return response.data?.data || response.data || [];
+    const payload = response.data;
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.data?.data)) return payload.data.data;
+    if (Array.isArray(payload?.data)) return payload.data;
+    if (Array.isArray(payload?.notifications)) return payload.notifications;
+    return [];
   },
 
   getUnreadNotificationsCount: async () => {
