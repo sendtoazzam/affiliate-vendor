@@ -34,7 +34,7 @@ import {
 import ConfirmModal from '@/components/ConfirmModal';
 
 export default function ProductsListPage() {
-  const { brand } = useAuth();
+  const { brand, hasPermission } = useAuth();
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -42,7 +42,6 @@ export default function ProductsListPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
   const [filterStock, setFilterStock] = useState('all'); // all, in-stock, out-of-stock
-  const [filterHideFromShop, setFilterHideFromShop] = useState('all'); // all, true, false
   const [filterHasVariants, setFilterHasVariants] = useState('all'); // all, true, false
 
   // Selection
@@ -133,6 +132,18 @@ export default function ProductsListPage() {
     }).format(val || 0);
   };
 
+  // Unique categories list for dropdown
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    products.forEach((p) => {
+      if (p.category && typeof p.category === 'string') {
+        const trimmed = p.category.trim();
+        if (trimmed) set.add(trimmed);
+      }
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [products]);
+
   // Filtered Products
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
@@ -144,7 +155,7 @@ export default function ProductsListPage() {
       }
 
       if (filterCategory) {
-        if (!p.category || !p.category.toLowerCase().includes(filterCategory.toLowerCase())) {
+        if (!p.category || p.category.toLowerCase() !== filterCategory.toLowerCase()) {
           return false;
         }
       }
@@ -152,15 +163,12 @@ export default function ProductsListPage() {
       if (filterStock === 'in-stock' && p.stockQuantity <= 0) return false;
       if (filterStock === 'out-of-stock' && p.stockQuantity > 0) return false;
 
-      if (filterHideFromShop === 'true' && !p.hide_from_shop) return false;
-      if (filterHideFromShop === 'false' && p.hide_from_shop) return false;
-
       if (filterHasVariants === 'true' && !p.has_variants) return false;
       if (filterHasVariants === 'false' && p.has_variants) return false;
 
       return true;
     });
-  }, [products, searchTerm, filterCategory, filterStock, filterHideFromShop, filterHasVariants]);
+  }, [products, searchTerm, filterCategory, filterStock, filterHasVariants]);
 
   // Active filter chips
   const activeFilterChips = useMemo(() => {
@@ -168,16 +176,14 @@ export default function ProductsListPage() {
     if (searchTerm) chips.push({ key: 'search', label: `Search: "${searchTerm}"` });
     if (filterCategory) chips.push({ key: 'category', label: `Category: ${filterCategory}` });
     if (filterStock !== 'all') chips.push({ key: 'stock', label: `Stock: ${filterStock}` });
-    if (filterHideFromShop !== 'all') chips.push({ key: 'hide', label: `Hide from shop: ${filterHideFromShop}` });
     if (filterHasVariants !== 'all') chips.push({ key: 'variants', label: `Variants: ${filterHasVariants === 'true' ? 'Has variants' : 'Simple'}` });
     return chips;
-  }, [searchTerm, filterCategory, filterStock, filterHideFromShop, filterHasVariants]);
+  }, [searchTerm, filterCategory, filterStock, filterHasVariants]);
 
   const removeFilterChip = (key: string) => {
     if (key === 'search') setSearchTerm('');
     if (key === 'category') setFilterCategory('');
     if (key === 'stock') setFilterStock('all');
-    if (key === 'hide') setFilterHideFromShop('all');
     if (key === 'variants') setFilterHasVariants('all');
   };
 
@@ -185,7 +191,6 @@ export default function ProductsListPage() {
     setSearchTerm('');
     setFilterCategory('');
     setFilterStock('all');
-    setFilterHideFromShop('all');
     setFilterHasVariants('all');
     setCurrentPage(1);
   };
@@ -264,7 +269,6 @@ export default function ProductsListPage() {
       { header: 'Price (MYR)', key: 'price', width: 120, type: 'currency' },
       { header: 'Stock Available', key: 'stockQuantity', width: 110, type: 'number' },
       { header: 'Status', key: 'is_active', width: 100, type: 'string' },
-      { header: 'Hide From Shop', key: 'hide_from_shop', width: 120, type: 'string' },
       { header: 'Variants Count', key: 'variants_count', width: 110, type: 'number' },
     ];
 
@@ -275,7 +279,6 @@ export default function ProductsListPage() {
       price: p.price,
       stockQuantity: p.stockQuantity,
       is_active: p.is_active ? 'Active' : 'Inactive',
-      hide_from_shop: p.hide_from_shop ? 'Yes' : 'No',
       variants_count: p.variants?.length || 0,
     }));
 
@@ -298,43 +301,51 @@ export default function ProductsListPage() {
 
         <div className="flex flex-wrap gap-2">
           {/* Download template */}
-          <button
-            type="button"
-            onClick={handleExportXls}
-            className="btn btn-outline btn-sm gap-2 text-xs font-semibold"
-          >
-            <Download className="h-4 w-4" />
-            <span>Download template</span>
-          </button>
+          {hasPermission('vendor.catalog.download_template') && (
+            <button
+              type="button"
+              onClick={handleExportXls}
+              className="btn btn-outline btn-sm gap-2 text-xs font-semibold"
+            >
+              <Download className="h-4 w-4" />
+              <span>Download template</span>
+            </button>
+          )}
 
           {/* Export Excel */}
-          <button
-            type="button"
-            onClick={handleExportXls}
-            disabled={loading || products.length === 0}
-            className="btn btn-outline btn-sm gap-2 border-success/40 text-success hover:bg-success/10 hover:border-success text-xs font-semibold"
-          >
-            <FileSpreadsheet className="h-4 w-4" />
-            <span>Export Excel</span>
-          </button>
+          {hasPermission('vendor.catalog.export') && (
+            <button
+              type="button"
+              onClick={handleExportXls}
+              disabled={loading || products.length === 0}
+              className="btn btn-outline btn-sm gap-2 border-success/40 text-success hover:bg-success/10 hover:border-success text-xs font-semibold"
+            >
+              <FileSpreadsheet className="h-4 w-4" />
+              <span>Export Excel</span>
+            </button>
+          )}
 
           {/* Performance Analytics shortcut */}
-          <Link
-            href="/vendor-portal/catalog/performance"
-            className="btn btn-outline btn-primary btn-sm gap-2 text-xs font-semibold"
-          >
-            <TrendingUp className="h-4 w-4" />
-            <span>Performance</span>
-          </Link>
+          {hasPermission('vendor.catalog.leaderboard') && (
+            <Link
+              href="/vendor-portal/catalog/performance"
+              className="btn btn-outline btn-primary btn-sm gap-2 text-xs font-semibold"
+            >
+              <TrendingUp className="h-4 w-4" />
+              <span>Performance</span>
+            </Link>
+          )}
 
           {/* Add Product Button */}
-          <Link
-            href="/vendor-portal/catalog/add-product"
-            className="btn btn-primary btn-sm gap-2 text-white text-xs font-semibold shadow-sm"
-          >
-            <Plus className="h-4 w-4" />
-            <span>Add Product</span>
-          </Link>
+          {hasPermission('vendor.catalog.create') && (
+            <Link
+              href="/vendor-portal/catalog/add-product"
+              className="btn btn-primary btn-sm gap-2 text-white text-xs font-semibold shadow-sm"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Add Product</span>
+            </Link>
+          )}
         </div>
       </div>
 
@@ -370,7 +381,7 @@ export default function ProductsListPage() {
           <div>
             <h2 className="text-base font-bold text-base-content">Find products</h2>
             <p className="text-xs text-base-content/60">
-              Search by name or SKU, filter by category, stock, shop visibility, and variants
+              Search by name or SKU, filter by category, stock, and variants
             </p>
           </div>
 
@@ -390,17 +401,22 @@ export default function ProductsListPage() {
               />
             </div>
 
-            {/* Category Filter */}
-            <input
-              type="text"
-              className="input input-bordered input-sm h-10 w-36 sm:w-44 text-xs"
-              placeholder="Category"
+            {/* Category Dropdown Filter */}
+            <select
+              className="select select-bordered select-sm h-10 w-36 sm:w-44 text-xs"
               value={filterCategory}
               onChange={(e) => {
                 setFilterCategory(e.target.value);
                 setCurrentPage(1);
               }}
-            />
+            >
+              <option value="">All categories</option>
+              {categories.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
 
             {/* Stock Filter */}
             <select
@@ -414,20 +430,6 @@ export default function ProductsListPage() {
               <option value="all">All stock</option>
               <option value="in-stock">In stock</option>
               <option value="out-of-stock">Out of stock</option>
-            </select>
-
-            {/* Hide From Shop Filter */}
-            <select
-              className="select select-bordered select-sm h-10 w-40 sm:w-44 text-xs"
-              value={filterHideFromShop}
-              onChange={(e) => {
-                setFilterHideFromShop(e.target.value);
-                setCurrentPage(1);
-              }}
-            >
-              <option value="all">Hide from shop: all</option>
-              <option value="true">Hide from shop: true</option>
-              <option value="false">Hide from shop: false</option>
             </select>
 
             {/* Variants Filter */}
@@ -517,7 +519,6 @@ export default function ProductsListPage() {
                 <th>SKU</th>
                 <th className="text-right">Price &amp; Stock</th>
                 <th>Status</th>
-                <th>Hide From Shop</th>
                 <th>Variants</th>
                 <th>Updated</th>
                 <th className="text-right pr-4">Actions</th>
@@ -526,7 +527,7 @@ export default function ProductsListPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={9} className="py-16 text-center">
+                  <td colSpan={8} className="py-16 text-center">
                     <div className="flex flex-col items-center gap-2">
                       <span className="loading loading-spinner loading-md text-primary"></span>
                       <p className="text-xs text-base-content/60">Loading products...</p>
@@ -535,7 +536,7 @@ export default function ProductsListPage() {
                 </tr>
               ) : paginatedProducts.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="py-16 text-center">
+                  <td colSpan={8} className="py-16 text-center">
                     <Package className="w-12 h-12 text-base-content/20 mx-auto mb-2" />
                     <p className="font-bold text-sm text-base-content">No products found</p>
                     <p className="text-xs text-base-content/60 mt-1">
@@ -670,15 +671,6 @@ export default function ProductsListPage() {
                         </div>
                       </td>
 
-                      {/* Hide From Shop */}
-                      <td>
-                        {product.hide_from_shop ? (
-                          <span className="badge badge-error badge-sm font-mono text-[10px]">true</span>
-                        ) : (
-                          <span className="badge badge-success badge-outline badge-sm font-mono text-[10px]">false</span>
-                        )}
-                      </td>
-
                       {/* Variants */}
                       <td>
                         {product.has_variants ? (
@@ -730,13 +722,15 @@ export default function ProductsListPage() {
                           </button>
 
                           {/* Edit product */}
-                          <Link
-                            href={`/vendor-portal/catalog/${product.id}/edit`}
-                            className="btn btn-ghost btn-xs btn-square text-base-content/60 hover:text-primary"
-                            title="Edit Product"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </Link>
+                          {hasPermission('vendor.catalog.edit') && (
+                            <Link
+                              href={`/vendor-portal/catalog/${product.id}/edit`}
+                              className="btn btn-ghost btn-xs btn-square text-base-content/60 hover:text-primary"
+                              title="Edit Product"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </Link>
+                          )}
 
                           {/* Stock modal */}
                           <button
@@ -749,14 +743,16 @@ export default function ProductsListPage() {
                           </button>
 
                           {/* Delete product */}
-                          <button
-                            type="button"
-                            onClick={() => setDeleteProductItem({ id: product.uuid, name: product.name })}
-                            className="btn btn-ghost btn-xs btn-square text-error"
-                            title="Delete Product"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          {hasPermission('vendor.catalog.manage') && (
+                            <button
+                              type="button"
+                              onClick={() => setDeleteProductItem({ id: product.uuid, name: product.name })}
+                              className="btn btn-ghost btn-xs btn-square text-error"
+                              title="Delete Product"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

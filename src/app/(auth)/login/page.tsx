@@ -39,7 +39,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (typeof document !== "undefined") {
-      document.title = "VamoFlex Vendor | Login";
+      document.title = "VF Vendor | Sign In";
     }
     checkMaintenance(true);
     const interval = setInterval(() => {

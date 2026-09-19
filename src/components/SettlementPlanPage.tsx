@@ -17,10 +17,11 @@ import {
   ArrowRight,
   ShieldCheck,
   History,
+  Lock,
 } from 'lucide-react';
 
 export default function SettlementPlanPage() {
-  const { brand, refreshBrand } = useAuth();
+  const { brand, refreshBrand, vendorConfig, hasPermission } = useAuth();
 
   const [pendingChange, setPendingChange] = useState<any | null>(null);
   const [loadingChange, setLoadingChange] = useState(true);
@@ -68,6 +69,10 @@ export default function SettlementPlanPage() {
   const hasPendingRequest = Boolean(
     pendingChange && pendingChange.status === 'pending'
   );
+
+  const isPlanChangeAllowed =
+    vendorConfig?.allow_plan_change !== false &&
+    hasPermission('vendor.settlement_plan.apply');
 
   const getClassName = (cls?: string) => {
     switch (cls) {
@@ -442,7 +447,7 @@ export default function SettlementPlanPage() {
                 </div>
                 <button
                   type="button"
-                  disabled={hasPendingRequest}
+                  disabled={hasPendingRequest || !isPlanChangeAllowed}
                   className={`btn btn-sm w-full text-xs font-bold gap-1.5 transition-all ${
                     isPendingTarget
                       ? 'btn-warning text-warning-content shadow-sm'
@@ -479,7 +484,20 @@ export default function SettlementPlanPage() {
       </div>
 
       {/* Change Application Form */}
-      <div className="card bg-base-100 border border-base-300 shadow-sm">
+      <div className="card bg-base-100 border border-base-300 shadow-sm relative overflow-hidden">
+        {!isPlanChangeAllowed && (
+          <div className="absolute inset-0 z-20 backdrop-blur-[2px] bg-base-100/85 flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-200">
+            <div className="w-12 h-12 rounded-2xl bg-error/10 text-error flex items-center justify-center mb-3 border border-error/20 shadow-sm">
+              <Lock className="w-6 h-6" />
+            </div>
+            <h4 className="text-base font-bold text-base-content tracking-tight">
+              Access Restricted
+            </h4>
+            <p className="text-xs text-base-content/70 mt-1 max-w-sm">
+              Module is not available for the time being
+            </p>
+          </div>
+        )}
         <div className="card-body p-6">
           <form onSubmit={handleClassChangeSubmit} className="space-y-4">
             <div>

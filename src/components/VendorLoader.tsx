@@ -19,11 +19,13 @@ export default function VendorLoader({
   label = "VAMOFLEX Vendor Hub",
   sublabel,
 }: VendorLoaderProps) {
+  const [mounted, setMounted] = useState(false);
   const [stageIndex, setStageIndex] = useState(0);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    setMounted(true);
     const interval = setInterval(() => {
       setStageIndex((prev) => (prev + 1) % loadingStages.length);
     }, 1800);
@@ -51,21 +53,30 @@ export default function VendorLoader({
       className="min-h-screen w-full flex items-center justify-center bg-base-200/80 relative overflow-hidden select-none p-4"
     >
       {/* Background ambient lighting */}
-      <div className="absolute w-80 h-80 bg-primary/10 rounded-full blur-3xl -top-10 -left-10 animate-pulse pointer-events-none" />
       <div
+        suppressHydrationWarning
+        className="absolute w-80 h-80 bg-primary/10 rounded-full blur-3xl -top-10 -left-10 animate-pulse pointer-events-none"
+      />
+      <div
+        suppressHydrationWarning
         className="absolute w-80 h-80 bg-accent/10 rounded-full blur-3xl -bottom-10 -right-10 animate-pulse pointer-events-none"
         style={{ animationDelay: "1s" }}
       />
 
       {/* Main glass card with 3D tilt */}
       <div
+        suppressHydrationWarning
         className="relative z-10 flex flex-col items-center max-w-sm w-full bg-base-100/90 backdrop-blur-xl border border-base-300/70 rounded-3xl p-8 shadow-xl transition-transform duration-300 ease-out"
-        style={{
-          transform: `perspective(1000px) rotateX(${-mousePos.y * 0.35}deg) rotateY(${mousePos.x * 0.35}deg)`,
-        }}
+        style={
+          mounted
+            ? {
+                transform: `perspective(1000px) rotateX(${-mousePos.y * 0.35}deg) rotateY(${mousePos.x * 0.35}deg)`,
+              }
+            : undefined
+        }
       >
         {/* Centered SVG Loader with Center Logo */}
-        <div className="relative w-36 h-36 flex items-center justify-center mb-6">
+        <div suppressHydrationWarning className="relative w-36 h-36 flex items-center justify-center mb-6">
           <svg
             viewBox="0 0 160 160"
             className="w-full h-full"
@@ -167,8 +178,8 @@ export default function VendorLoader({
           </svg>
 
           {/* Centered Brand Icon */}
-          <div className="absolute inset-0 m-auto w-16 h-16 rounded-2xl bg-base-100 shadow-md border border-base-200/80 flex items-center justify-center pointer-events-auto group cursor-pointer transition-transform duration-300 hover:scale-105">
-            <div className="absolute inset-0 rounded-2xl bg-primary/10 animate-ping opacity-25" />
+          <div suppressHydrationWarning className="absolute inset-0 m-auto w-16 h-16 rounded-2xl bg-base-100 shadow-md border border-base-200/80 flex items-center justify-center pointer-events-auto group cursor-pointer transition-transform duration-300 hover:scale-105">
+            <div suppressHydrationWarning className="absolute inset-0 rounded-2xl bg-primary/10 animate-ping opacity-25" />
             <img
               src="/images/logo/preloader_icon.png"
               alt="VAMOFLEX"
@@ -178,8 +189,8 @@ export default function VendorLoader({
         </div>
 
         {/* Text and stages */}
-        <div className="text-center space-y-2 w-full">
-          <div className="flex items-center justify-center gap-1.5">
+        <div suppressHydrationWarning className="text-center space-y-2 w-full">
+          <div suppressHydrationWarning className="flex items-center justify-center gap-1.5">
             <h3 className="font-bold text-sm text-base-content tracking-tight">
               {label}
             </h3>
@@ -188,17 +199,17 @@ export default function VendorLoader({
             </span>
           </div>
 
-          <p className="text-xs text-base-content/60 h-4 font-medium transition-all duration-300">
+          <p suppressHydrationWarning className="text-xs text-base-content/60 h-4 font-medium transition-all duration-300">
             {sublabel || loadingStages[stageIndex]}
           </p>
 
           {/* Animated progress bar */}
-          <div className="w-full bg-base-200 rounded-full h-1.5 overflow-hidden mt-3">
-            <div className="h-full bg-primary rounded-full animate-[shimmer_1.8s_ease-in-out_infinite] w-full origin-left" />
+          <div suppressHydrationWarning className="w-full bg-base-200 rounded-full h-1.5 overflow-hidden mt-3">
+            <div suppressHydrationWarning className="h-full bg-primary rounded-full animate-[shimmer_1.8s_ease-in-out_infinite] w-full origin-left" />
           </div>
 
           {/* Status badges */}
-          <div className="pt-3 flex items-center justify-center gap-4 text-[11px] text-base-content/50 border-t border-base-200/80 mt-3">
+          <div suppressHydrationWarning className="pt-3 flex items-center justify-center gap-4 text-[11px] text-base-content/50 border-t border-base-200/80 mt-3">
             <span className="flex items-center gap-1">
               <ShieldCheck className="w-3.5 h-3.5 text-success" />
               Encrypted

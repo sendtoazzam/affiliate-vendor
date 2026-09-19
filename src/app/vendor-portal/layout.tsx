@@ -32,6 +32,7 @@ import SessionExpiredModal from "@/components/SessionExpiredModal";
 import VendorLoader from "@/components/VendorLoader";
 import PreloaderBar from "@/components/PreloaderBar";
 import NotificationBell from "@/components/NotificationBell";
+import PayoutCyclePill from "@/components/PayoutCyclePill";
 import { firebaseMessaging } from "@/lib/firebase-messaging";
 
 export default function DashboardLayout({
@@ -45,6 +46,7 @@ export default function DashboardLayout({
     isAuthenticated,
     isLoading,
     isSessionExpired,
+    hasPermission,
     logout,
     dismissSessionExpired,
   } = useAuth();
@@ -160,16 +162,25 @@ export default function DashboardLayout({
         return "Settlement Plan";
       }
       if (path.includes("/profile")) {
-        return "Profile";
+        return "Vendor Profile";
       }
       if (path.includes("/support")) {
-        return "Help & Support";
+        return "Support & Help Desk";
+      }
+      if (path.includes("/pdpa")) {
+        return "PDPA Notice (Act 709)";
+      }
+      if (path.includes("/privacy-notice")) {
+        return "Privacy & ISO Notice";
+      }
+      if (path.includes("/terms")) {
+        return "Terms & Conditions";
       }
       return "Portal";
     };
 
     if (typeof document !== "undefined") {
-      document.title = `VamoFlex Vendor | ${getPageTitle(pathname)}`;
+      document.title = `VF Vendor | ${getPageTitle(pathname)}`;
     }
   }, [pathname]);
 
@@ -218,6 +229,7 @@ export default function DashboardLayout({
         "/dashboard",
       ],
       icon: LayoutDashboard,
+      permission: "vendor.dashboard.view",
     },
     {
       type: "group" as const,
@@ -230,12 +242,14 @@ export default function DashboardLayout({
           href: "/vendor-portal/catalog/manage-product",
           aliases: ["/vendor-portal/products", "/products"],
           icon: Boxes,
+          permission: "vendor.catalog.view",
         },
         {
           name: "Add Product",
           href: "/vendor-portal/catalog/add-product",
           aliases: ["/vendor-portal/products/new", "/products/new"],
           icon: PlusCircle,
+          permission: "vendor.catalog.create",
         },
         {
           name: "NCS Leaderboard",
@@ -245,12 +259,14 @@ export default function DashboardLayout({
             "/products/performance",
           ],
           icon: TrendingUp,
+          permission: "vendor.catalog.leaderboard",
         },
         {
           name: "Catalog Breakdown",
           href: "/vendor-portal/catalog/breakdown",
           aliases: ["/vendor-portal/products/breakdown", "/products/breakdown"],
           icon: Layers,
+          permission: "vendor.catalog.breakdown",
         },
       ],
     },
@@ -265,12 +281,14 @@ export default function DashboardLayout({
           href: "/vendor-portal/insights/sales-report",
           aliases: ["/vendor-portal/reporting", "/reporting"],
           icon: BarChart3,
+          permission: "vendor.insights.sales",
         },
         {
           name: "Performance Report",
           href: "/vendor-portal/insights/performance-report",
           aliases: ["/vendor-portal/reporting/products", "/reporting/products"],
           icon: FileSpreadsheet,
+          permission: "vendor.insights.performance",
         },
       ],
     },
@@ -280,6 +298,7 @@ export default function DashboardLayout({
       href: "/vendor-portal/accounting",
       aliases: ["/accounting"],
       icon: Receipt,
+      permission: "vendor.accounting.view",
     },
     {
       type: "group" as const,
@@ -292,6 +311,7 @@ export default function DashboardLayout({
           href: "/vendor-portal/commerce-hub/settlement-plan",
           aliases: ["/vendor-portal/settlement-plan", "/settlement-plan"],
           icon: Percent,
+          permission: "vendor.settlement_plan.view",
         },
         {
           name: "Class Change History",
@@ -302,10 +322,35 @@ export default function DashboardLayout({
             "/commerce-hub/history",
           ],
           icon: History,
+          permission: "vendor.settlement_plan.history",
         },
       ],
     },
   ];
+
+  const filteredNavSections = navSections
+    .map((section) => {
+      if (section.type === "link") {
+        if (section.permission && !hasPermission(section.permission)) {
+          return null;
+        }
+        return section;
+      }
+      if (section.type === "group") {
+        const visibleItems = section.items.filter(
+          (item) => !item.permission || hasPermission(item.permission)
+        );
+        if (visibleItems.length === 0) {
+          return null;
+        }
+        return {
+          ...section,
+          items: visibleItems,
+        };
+      }
+      return section;
+    })
+    .filter(Boolean) as typeof navSections;
 
   const getKelasBadge = (cls?: string) => {
     switch (cls) {
@@ -527,7 +572,7 @@ export default function DashboardLayout({
             isCollapsed ? "overflow-visible" : "overflow-y-auto"
           }`}
         >
-          {navSections.map((section) => {
+          {filteredNavSections.map((section) => {
             if (section.type === "link") {
               const isActive =
                 section.href === "/"
@@ -736,38 +781,29 @@ export default function DashboardLayout({
           </div>
         )}
 
-        {/* User / Logout Footer */}
-        <div
-          className={`p-4 border-t border-base-300 flex items-center ${
-            isCollapsed ? "justify-center" : "justify-between"
-          }`}
-        >
-          {!isCollapsed && (
-            <div className="overflow-hidden">
-              <p className="text-xs font-semibold truncate text-base-content">
-                {user?.name || user?.username || "Vendor Account"}
+        {/* Fixed Bottom Build & Version Info */}
+        <div className="h-[72px] border-t border-base-300 bg-base-100/60 shrink-0 flex items-center justify-center px-3.5">
+          {!isCollapsed ? (
+            <div className="text-center space-y-0.5">
+              <p className="text-xs font-bold text-base-content/85 tracking-wide">
+                VF Vendor <span className="font-mono text-primary font-bold">v0.1.0</span>
               </p>
-              <p className="text-[10px] text-base-content/50 truncate">
-                {user?.email || "vendor@vamoflex.com"}
+              <p className="text-[11px] text-base-content/50 font-mono">
+                Build 2026.09.01
               </p>
             </div>
-          )}
-          <div className={isCollapsed ? "relative group" : ""}>
-            <button
-              onClick={() => setIsLogoutModalOpen(true)}
-              className="btn btn-ghost btn-sm btn-square text-error hover:bg-error/10"
-              title="Sign Out"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-            {isCollapsed && (
+          ) : (
+            <div className="flex justify-center relative group">
+              <span className="text-[10px] font-mono font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+                v0.1.0
+              </span>
               <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 hidden group-hover:flex items-center z-[100] pointer-events-none">
-                <div className="bg-error text-error-content text-xs font-semibold px-3 py-1.5 rounded-lg shadow-xl whitespace-nowrap">
-                  Sign Out
+                <div className="bg-base-100 text-base-content text-xs font-semibold px-3 py-1.5 rounded-xl shadow-2xl border border-base-300 whitespace-nowrap">
+                  VF Vendor v0.1.0 (Build 2026.09.01)
                 </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </aside>
 
@@ -790,14 +826,8 @@ export default function DashboardLayout({
           </div>
 
           <div className="flex items-center gap-4">
-            {/* Weekly Cycle Pill */}
-            <div className="hidden sm:flex items-center gap-2 bg-primary/10 border border-primary/20 text-primary px-3 py-1.5 rounded-full text-xs font-medium">
-              <Calendar className="w-3.5 h-3.5" />
-              <span>
-                Next Payout: <strong className="font-bold">Wednesday</strong>{" "}
-                (Sunday Cutoff)
-              </span>
-            </div>
+            {/* Dynamic Weekly Payout Cycle Pill */}
+            <PayoutCyclePill />
 
             {/* Notification Bell */}
             <NotificationBell />
@@ -906,6 +936,50 @@ export default function DashboardLayout({
           {renderBreadcrumbs()}
           {children}
         </main>
+
+        {/* Footer (Scrolls with page content) */}
+        <footer className="mt-auto min-h-[72px] sm:h-[72px] border-t border-base-300 bg-base-100/60 px-6 py-2.5 sm:px-8 text-xs text-base-content/60 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="text-center sm:text-left space-y-1">
+            <div>
+              <span>&copy; {new Date().getFullYear()} </span>
+              <span className="font-semibold text-base-content">VamoFlex</span> by{" "}
+              <a
+                href="https://hausinternational.my"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-primary transition-colors underline-offset-2 hover:underline"
+              >
+                HausInternational.my
+              </a>
+            </div>
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 text-[11px] text-base-content/50">
+              <Link
+                href="/vendor-portal/legal/pdpa"
+                className="hover:text-primary hover:underline transition-colors"
+              >
+                PDPA
+              </Link>
+              <span>•</span>
+              <Link
+                href="/vendor-portal/legal/terms"
+                className="hover:text-primary hover:underline transition-colors"
+              >
+                Terms & Conditions
+              </Link>
+              <span>•</span>
+              <Link
+                href="/vendor-portal/legal/privacy-notice"
+                className="hover:text-primary hover:underline transition-colors"
+              >
+                Privacy Notice
+              </Link>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 text-center sm:text-right">
+            <span>Powered By</span>
+            <span className="font-semibold text-primary">BaqisAI</span>
+          </div>
+        </footer>
       </div>
 
       {/* Logout Confirmation Modal */}

@@ -17,8 +17,8 @@ import Providers from "@/components/Providers";
 
 export const metadata: Metadata = {
   title: {
-    template: "VamoFlex Vendor | %s",
-    default: "VamoFlex Vendor",
+    template: "VF Vendor | %s",
+    default: "VF Vendor | Dashboard",
   },
   description:
     "Curated Brand Partner Portal for Products, Reporting, Settlements and Payouts",

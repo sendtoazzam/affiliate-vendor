@@ -4,7 +4,9 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { vendorApi } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import { DashboardData } from '@/lib/types';
+import { DashboardData, ReportingData } from '@/lib/types';
+import ProductSalesLineChart from '@/components/ProductSalesLineChart';
+import ProductStockBalanceBarChart from '@/components/ProductStockBalanceBarChart';
 import {
   LayoutDashboard,
   TrendingUp,
@@ -21,41 +23,77 @@ import {
   Layers,
   AlertCircle,
   CheckCircle2,
-  Percent
+  Percent,
 } from 'lucide-react';
 
 export default function VendorDashboardPage() {
   const { brand } = useAuth();
   const [data, setData] = useState<DashboardData | null>(null);
-  const [reportingSummary, setReportingSummary] = useState<any>(null);
+  const [reportingData, setReportingData] = useState<ReportingData | null>(null);
+  const [productsList, setProductsList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [chartLoading, setChartLoading] = useState(false);
+  const [timeRange, setTimeRange] = useState('now');
+
+  const fetchData = async (isSilent = false) => {
+    try {
+      if (!isSilent) setLoading(true);
+      const [dashRes, repRes, prodRes] = await Promise.allSettled([
+        vendorApi.getDashboard(),
+        vendorApi.getReporting({ start_date: timeRange }),
+        vendorApi.getProducts({ per_page: 50 }),
+      ]);
+
+      if (dashRes.status === 'fulfilled') {
+        setData(dashRes.value?.dashboard || dashRes.value?.data || dashRes.value);
+      }
+
+      if (repRes.status === 'fulfilled') {
+        const rData = repRes.value?.reporting || repRes.value?.data || repRes.value;
+        setReportingData(rData || null);
+      }
+
+      if (prodRes.status === 'fulfilled') {
+        const pList =
+          prodRes.value?.products?.data ||
+          prodRes.value?.products ||
+          prodRes.value?.data ||
+          [];
+        setProductsList(Array.isArray(pList) ? pList : []);
+      }
+    } catch (err) {
+      console.error('Failed to load dashboard data', err);
+    } finally {
+      if (!isSilent) setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const [dashRes, repRes] = await Promise.allSettled([
-          vendorApi.getDashboard(),
-          vendorApi.getReporting({ start_date: '30d' }),
-        ]);
-
-        if (dashRes.status === 'fulfilled') {
-          setData(dashRes.value?.dashboard || dashRes.value?.data || dashRes.value);
-        }
-
-        if (repRes.status === 'fulfilled') {
-          const rData = repRes.value?.reporting || repRes.value?.data || repRes.value;
-          setReportingSummary(rData?.summary || null);
-        }
-      } catch (err) {
-        console.error('Failed to load dashboard data', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
-  }, []);
+
+    // Live Monitoring: auto-refresh metrics every 30 seconds
+    const interval = setInterval(() => {
+      fetchData(true);
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [timeRange]);
+
+  const handleTimeRangeChange = async (range: string) => {
+    setTimeRange(range);
+    try {
+      setChartLoading(true);
+      const repRes = await vendorApi.getReporting({ start_date: range });
+      const rData = repRes?.reporting || repRes?.data || repRes;
+      if (rData) {
+        setReportingData(rData);
+      }
+    } catch (err) {
+      console.error('Failed to reload reporting range', err);
+    } finally {
+      setChartLoading(false);
+    }
+  };
 
   const formatCurrency = (val?: number) => {
     return new Intl.NumberFormat('en-MY', {
@@ -68,23 +106,45 @@ export default function VendorDashboardPage() {
   const getKelasInfo = (cls?: string) => {
     switch (cls) {
       case 'kelas_a':
-        return { name: 'Kelas A', share: '45%', badge: 'badge-info', bg: 'bg-info/10 text-info border-info/20' };
+        return {
+          name: 'Kelas A',
+          share: '45%',
+          badge: 'badge-info',
+          bg: 'bg-info/10 text-info border-info/20',
+        };
       case 'kelas_c':
-        return { name: 'Kelas C', share: '55%', badge: 'badge-accent', bg: 'bg-accent/10 text-accent border-accent/20' };
+        return {
+          name: 'Kelas C',
+          share: '55%',
+          badge: 'badge-accent',
+          bg: 'bg-accent/10 text-accent border-accent/20',
+        };
       case 'kelas_b':
       default:
-        return { name: 'Kelas B', share: '50%', badge: 'badge-primary', bg: 'bg-primary/10 text-primary border-primary/20' };
+        return {
+          name: 'Kelas B',
+          share: '50%',
+          badge: 'badge-primary',
+          bg: 'bg-primary/10 text-primary border-primary/20',
+        };
     }
   };
 
   const activeClass = brand?.settlement_class || data?.active_class?.code || 'kelas_b';
   const kelasInfo = getKelasInfo(activeClass);
 
+  const reportingSummary = reportingData?.summary;
   const stats = {
-    grossSales: data?.stats?.gross_sales ?? reportingSummary?.gross_merchandise_value ?? 0,
+    grossSales:
+      data?.stats?.gross_sales ?? reportingSummary?.gross_merchandise_value ?? 0,
     settledNcs: data?.stats?.settled_ncs ?? reportingSummary?.settled_ncs ?? 0,
-    estimatedPayout: data?.stats?.estimated_brand_payout ?? reportingSummary?.brand_net_payout ?? 0,
-    itemsSold: data?.stats?.total_items_sold ?? reportingSummary?.items_sold ?? reportingSummary?.order_count ?? 0,
+    estimatedPayout:
+      data?.stats?.estimated_brand_payout ?? reportingSummary?.brand_net_payout ?? 0,
+    itemsSold:
+      data?.stats?.total_items_sold ??
+      reportingSummary?.items_sold ??
+      reportingSummary?.order_count ??
+      0,
   };
 
   return (
@@ -115,7 +175,8 @@ export default function VendorDashboardPage() {
                 {brand?.name || 'Partner Brand Hub'}
               </h1>
               <p className="text-sm text-primary-content/80 max-w-xl">
-                Real-time sales performance, transparent weekly settlement metrics, and direct catalog management.
+                Real-time sales performance, transparent weekly settlement metrics, and direct
+                catalog management.
               </p>
             </div>
 
@@ -128,7 +189,9 @@ export default function VendorDashboardPage() {
                 <p className="text-[11px] font-semibold text-primary-content/75 uppercase tracking-wider">
                   Active Settlement Tier
                 </p>
-                <span className="text-[10px] font-bold text-secondary uppercase underline">View Plans →</span>
+                <span className="text-[10px] font-bold text-secondary uppercase underline">
+                  View Plans →
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-lg font-bold text-white">{kelasInfo.name}</span>
@@ -159,7 +222,11 @@ export default function VendorDashboardPage() {
             </div>
             <div className="mt-3">
               <h3 className="text-xl sm:text-2xl font-black text-base-content tracking-tight">
-                {loading ? <span className="loading loading-spinner loading-sm" /> : formatCurrency(stats.grossSales)}
+                {loading ? (
+                  <span className="loading loading-spinner loading-sm" />
+                ) : (
+                  formatCurrency(stats.grossSales)
+                )}
               </h3>
               <p className="text-[11px] text-base-content/50 mt-1">Total customer order value</p>
             </div>
@@ -177,9 +244,15 @@ export default function VendorDashboardPage() {
             </div>
             <div className="mt-3">
               <h3 className="text-xl sm:text-2xl font-black text-base-content tracking-tight">
-                {loading ? <span className="loading loading-spinner loading-sm" /> : formatCurrency(stats.settledNcs)}
+                {loading ? (
+                  <span className="loading loading-spinner loading-sm" />
+                ) : (
+                  formatCurrency(stats.settledNcs)
+                )}
               </h3>
-              <p className="text-[11px] text-base-content/50 mt-1">Net cleared after vouchers & refunds</p>
+              <p className="text-[11px] text-base-content/50 mt-1">
+                Net cleared after vouchers & refunds
+              </p>
             </div>
           </div>
         </div>
@@ -188,16 +261,24 @@ export default function VendorDashboardPage() {
         <div className="card bg-base-100 border border-base-300 shadow-sm hover:border-primary/40 transition-colors">
           <div className="card-body p-5">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-base-content/60">Estimated Brand Payout</span>
+              <span className="text-xs font-semibold text-base-content/60">
+                Estimated Brand Payout
+              </span>
               <div className="w-8 h-8 rounded-lg bg-secondary/20 text-primary flex items-center justify-center">
                 <Percent className="w-4 h-4" />
               </div>
             </div>
             <div className="mt-3">
               <h3 className="text-xl sm:text-2xl font-black text-primary tracking-tight">
-                {loading ? <span className="loading loading-spinner loading-sm" /> : formatCurrency(stats.estimatedPayout)}
+                {loading ? (
+                  <span className="loading loading-spinner loading-sm" />
+                ) : (
+                  formatCurrency(stats.estimatedPayout)
+                )}
               </h3>
-              <p className="text-[11px] text-base-content/50 mt-1">Estimated {kelasInfo.share} net share</p>
+              <p className="text-[11px] text-base-content/50 mt-1">
+                Estimated {kelasInfo.share} net share
+              </p>
             </div>
           </div>
         </div>
@@ -213,11 +294,41 @@ export default function VendorDashboardPage() {
             </div>
             <div className="mt-3">
               <h3 className="text-xl sm:text-2xl font-black text-base-content tracking-tight">
-                {loading ? <span className="loading loading-spinner loading-sm" /> : stats.itemsSold.toLocaleString()}
+                {loading ? (
+                  <span className="loading loading-spinner loading-sm" />
+                ) : (
+                  stats.itemsSold.toLocaleString()
+                )}
               </h3>
               <p className="text-[11px] text-base-content/50 mt-1">Via Central Logistics Hub</p>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* 70/30 Analytics & Inventory Velocity Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-10 gap-5 items-stretch">
+        {/* Left 70%: Product Sales Chart (Line Chart) */}
+        <div className="lg:col-span-7 h-[450px]">
+          <ProductSalesLineChart
+            timeline={reportingData?.breakdown || []}
+            loading={loading || chartLoading}
+            selectedRange={timeRange}
+            onRangeChange={handleTimeRangeChange}
+            brandSharePct={
+              brand?.brand_share_percentage ??
+              (activeClass === 'kelas_a' ? 45 : activeClass === 'kelas_c' ? 55 : 50)
+            }
+          />
+        </div>
+
+        {/* Right 30%: Product Quantity Balance & Total Sold (Bar Chart) */}
+        <div className="lg:col-span-3 h-[450px]">
+          <ProductStockBalanceBarChart
+            products={productsList}
+            topProducts={reportingData?.top_products || reportingData?.products || []}
+            loading={loading}
+          />
         </div>
       </div>
 

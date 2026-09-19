@@ -23,7 +23,7 @@ export default function ForgotPasswordPage() {
 
   React.useEffect(() => {
     if (typeof document !== "undefined") {
-      document.title = "VamoFlex Vendor | Forgot Password";
+      document.title = "VF Vendor | Forgot Password";
     }
   }, []);
 

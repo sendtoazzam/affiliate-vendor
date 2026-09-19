@@ -18,13 +18,13 @@ export default function SessionExpiredModal({
   const router = useRouter();
   const [countdown, setCountdown] = useState(redirectSeconds);
 
-  const handleRedirect = () => {
+  const handleRedirect = React.useCallback(() => {
     if (onRedirectNow) {
       onRedirectNow();
     } else {
       router.push('/login');
     }
-  };
+  }, [onRedirectNow, router]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -32,20 +32,17 @@ export default function SessionExpiredModal({
       return;
     }
 
-    setCountdown(redirectSeconds);
-    const timer = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          handleRedirect();
-          return 0;
-        }
-        return prev - 1;
-      });
+    if (countdown <= 0) {
+      handleRedirect();
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setCountdown((prev) => prev - 1);
     }, 1000);
 
-    return () => clearInterval(timer);
-  }, [isOpen, redirectSeconds]);
+    return () => clearTimeout(timer);
+  }, [isOpen, countdown, redirectSeconds, handleRedirect]);
 
   if (!isOpen) return null;
 
