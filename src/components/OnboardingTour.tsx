@@ -28,9 +28,10 @@ interface TourStep {
   icon: React.ComponentType<{ className?: string }>;
   parentGroup?: string;
   position?: 'right' | 'bottom' | 'left' | 'top';
+  permission?: string | string[];
 }
 
-const TOUR_STEPS: TourStep[] = [
+const ALL_TOUR_STEPS: TourStep[] = [
   {
     target: '[data-tour="nav-dashboard"]',
     title: 'Vendor Dashboard Overview',
@@ -39,6 +40,7 @@ const TOUR_STEPS: TourStep[] = [
     category: 'Navigation',
     icon: LayoutDashboard,
     position: 'right',
+    permission: 'vendor.dashboard.view',
   },
   {
     target: '[data-tour="brand-badge"]',
@@ -58,6 +60,7 @@ const TOUR_STEPS: TourStep[] = [
     icon: Package,
     parentGroup: 'catalog',
     position: 'right',
+    permission: ['vendor.catalog.view', 'vendor.catalog.create', 'vendor.catalog.performance', 'vendor.catalog.breakdown'],
   },
   {
     target: '[data-tour="nav-manage-product"]',
@@ -68,6 +71,7 @@ const TOUR_STEPS: TourStep[] = [
     icon: Package,
     parentGroup: 'catalog',
     position: 'right',
+    permission: 'vendor.catalog.view',
   },
   {
     target: '[data-tour="nav-add-product"]',
@@ -78,6 +82,7 @@ const TOUR_STEPS: TourStep[] = [
     icon: Package,
     parentGroup: 'catalog',
     position: 'right',
+    permission: 'vendor.catalog.create',
   },
   {
     target: '[data-tour="nav-performance"]',
@@ -88,6 +93,7 @@ const TOUR_STEPS: TourStep[] = [
     icon: BarChart3,
     parentGroup: 'catalog',
     position: 'right',
+    permission: 'vendor.catalog.performance',
   },
   {
     target: '[data-tour="nav-breakdown"]',
@@ -98,6 +104,7 @@ const TOUR_STEPS: TourStep[] = [
     icon: Package,
     parentGroup: 'catalog',
     position: 'right',
+    permission: 'vendor.catalog.breakdown',
   },
   {
     target: '[data-tour="nav-settlement-plan"]',
@@ -107,6 +114,7 @@ const TOUR_STEPS: TourStep[] = [
     category: 'Commerce Hub',
     icon: Layers,
     position: 'right',
+    permission: 'vendor.settlement_plan.view',
   },
   {
     target: '[data-tour="nav-accounting"]',
@@ -116,6 +124,7 @@ const TOUR_STEPS: TourStep[] = [
     category: 'Accounting',
     icon: Receipt,
     position: 'right',
+    permission: 'vendor.accounting.view',
   },
   {
     target: '[data-tour="nav-insights"]',
@@ -125,6 +134,7 @@ const TOUR_STEPS: TourStep[] = [
     category: 'Insights',
     icon: BarChart3,
     position: 'right',
+    permission: ['vendor.insights.sales', 'vendor.insights.sales_report'],
   },
   {
     target: '[data-tour="payout-cycle"]',
@@ -169,14 +179,19 @@ export default function OnboardingTour({
 }: {
   onExpandGroup?: (groupKey: string) => void;
 }) {
-  const { isOnboardingOpen, onboardingCompleted, completeOnboarding, closeOnboarding } =
+  const { isOnboardingOpen, onboardingCompleted, completeOnboarding, closeOnboarding, hasPermission } =
     useAuth();
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
   const [isFinishing, setIsFinishing] = useState(false);
 
-  const step = TOUR_STEPS[currentStepIndex];
-  const isLastStep = currentStepIndex === TOUR_STEPS.length - 1;
+  const activeTourSteps = ALL_TOUR_STEPS.filter((s) => {
+    if (!s.permission) return true;
+    return hasPermission(s.permission);
+  });
+
+  const step = activeTourSteps[currentStepIndex];
+  const isLastStep = currentStepIndex === activeTourSteps.length - 1;
   const isCompulsory = !onboardingCompleted;
 
   // Reset to step 0 when onboarding opens
@@ -250,7 +265,7 @@ export default function OnboardingTour({
 
   const StepIcon = step.icon;
   const progressPercent = Math.round(
-    ((currentStepIndex + 1) / TOUR_STEPS.length) * 100
+    ((currentStepIndex + 1) / activeTourSteps.length) * 100
   );
 
   // Tooltip positioning
@@ -334,7 +349,7 @@ export default function OnboardingTour({
                   {step.category}
                 </span>
                 <span className="text-[11px] font-bold text-base-content/60">
-                  {currentStepIndex + 1} of {TOUR_STEPS.length}
+                  {currentStepIndex + 1} of {activeTourSteps.length}
                 </span>
               </div>
               <h3 className="text-sm font-black text-base-content leading-tight mt-0.5">
@@ -392,7 +407,7 @@ export default function OnboardingTour({
           </button>
 
           <div className="flex items-center gap-1">
-            {TOUR_STEPS.map((_, i) => (
+            {activeTourSteps.map((_, i) => (
               <div
                 key={i}
                 className={`w-1.5 h-1.5 rounded-full transition-all ${

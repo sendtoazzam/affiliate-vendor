@@ -274,7 +274,7 @@ export default function DashboardLayout({
             "/products/performance",
           ],
           icon: TrendingUp,
-          permission: "vendor.catalog.leaderboard",
+          permission: "vendor.catalog.performance",
           dataTour: "nav-performance",
         },
         {
@@ -299,7 +299,7 @@ export default function DashboardLayout({
           href: "/vendor-portal/insights/sales-report",
           aliases: ["/vendor-portal/reporting", "/reporting"],
           icon: BarChart3,
-          permission: "vendor.insights.sales",
+          permission: "vendor.insights.sales_report",
           dataTour: "nav-insights",
         },
         {
@@ -307,7 +307,7 @@ export default function DashboardLayout({
           href: "/vendor-portal/insights/performance-report",
           aliases: ["/vendor-portal/reporting/products", "/reporting/products"],
           icon: FileSpreadsheet,
-          permission: "vendor.insights.performance",
+          permission: "vendor.insights.performance_report",
           dataTour: "nav-performance-report",
         },
       ],
@@ -519,7 +519,7 @@ export default function DashboardLayout({
   };
 
   return (
-    <div className="min-h-screen bg-base-200 flex">
+    <div suppressHydrationWarning className="min-h-screen bg-base-200 flex">
       {/* Top Preloader Bar */}
       <PreloaderBar />
 
@@ -932,33 +932,39 @@ export default function DashboardLayout({
                 </li>
 
                 <div className="divider my-0.5"></div>
-                <li>
-                  <Link
-                    href="/vendor-portal/profile"
-                    className="flex items-center gap-2.5 py-2 text-xs font-medium"
-                  >
-                    <User className="w-4 h-4 text-base-content/70" />
-                    Profile
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/vendor-portal/profile/edit"
-                    className="flex items-center gap-2.5 py-2 text-xs font-medium"
-                  >
-                    <Edit className="w-4 h-4 text-base-content/70" />
-                    Edit Profile
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/vendor-portal/support"
-                    className="flex items-center gap-2.5 py-2 text-xs font-medium"
-                  >
-                    <HelpCircle className="w-4 h-4 text-base-content/70" />
-                    Help & Support
-                  </Link>
-                </li>
+                {hasPermission('vendor.profile.view') && (
+                  <li>
+                    <Link
+                      href="/vendor-portal/profile"
+                      className="flex items-center gap-2.5 py-2 text-xs font-medium"
+                    >
+                      <User className="w-4 h-4 text-base-content/70" />
+                      Profile
+                    </Link>
+                  </li>
+                )}
+                {hasPermission('vendor.profile.edit') && (
+                  <li>
+                    <Link
+                      href="/vendor-portal/profile/edit"
+                      className="flex items-center gap-2.5 py-2 text-xs font-medium"
+                    >
+                      <Edit className="w-4 h-4 text-base-content/70" />
+                      Edit Profile
+                    </Link>
+                  </li>
+                )}
+                {hasPermission('vendor.support.view') && (
+                  <li>
+                    <Link
+                      href="/vendor-portal/support"
+                      className="flex items-center gap-2.5 py-2 text-xs font-medium"
+                    >
+                      <HelpCircle className="w-4 h-4 text-base-content/70" />
+                      Help & Support
+                    </Link>
+                  </li>
+                )}
                 <li>
                   <button
                     type="button"
@@ -992,10 +998,13 @@ export default function DashboardLayout({
         </main>
 
         {/* Footer (Scrolls with page content) */}
-        <footer className="mt-auto min-h-[72px] sm:h-[72px] border-t border-base-300 bg-base-100/60 px-6 py-2.5 sm:px-8 text-xs text-base-content/60 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="text-center sm:text-left space-y-1">
-            <div>
-              <span>&copy; {new Date().getFullYear()} </span>
+        <footer
+          suppressHydrationWarning
+          className="mt-auto min-h-[72px] sm:h-[72px] border-t border-base-300 bg-base-100/60 px-6 py-2.5 sm:px-8 text-xs text-base-content/60 flex flex-col sm:flex-row items-center justify-between gap-3"
+        >
+          <div suppressHydrationWarning className="text-center sm:text-left space-y-1">
+            <div suppressHydrationWarning>
+              <span suppressHydrationWarning>&copy; {new Date().getFullYear()} </span>
               <span className="font-semibold text-base-content">VamoFlex</span> by{" "}
               <a
                 href="https://hausinternational.my"

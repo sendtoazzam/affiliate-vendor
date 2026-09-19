@@ -72,9 +72,15 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-base-200 via-base-100 to-base-300 flex items-center justify-center p-4">
-      <div className="card w-full max-w-md bg-base-100 shadow-2xl border border-base-300">
-        <div className="card-body p-8">
+    <div
+      suppressHydrationWarning
+      className="min-h-screen bg-gradient-to-br from-base-200 via-base-100 to-base-300 flex items-center justify-center p-4"
+    >
+      <div
+        suppressHydrationWarning
+        className="card w-full max-w-md bg-base-100 shadow-2xl border border-base-300"
+      >
+        <div suppressHydrationWarning className="card-body p-8">
           <div className="flex flex-col items-center text-center mb-6">
             <img
               src="/images/logo/logo.png"
@@ -218,7 +224,10 @@ export default function ForgotPasswordPage() {
           <div className="divider my-4 text-xs text-base-content/40">
             Hausflex Platform
           </div>
-          <p className="text-center text-[11px] text-base-content/45">
+          <p
+            suppressHydrationWarning
+            className="text-center text-[11px] text-base-content/45"
+          >
             &copy; {new Date().getFullYear()} · VAMOFLEX Vendor Hub
           </p>
         </div>

@@ -262,6 +262,12 @@ export default function VendorProfilePage() {
                   <p className="font-semibold text-sm text-base-content">{activeBrand?.bank_name || 'Maybank / Public Bank'}</p>
                 </div>
                 <div>
+                  <label className="text-base-content/60 font-medium block mb-1">SWIFT / BIC Code</label>
+                  <p className="font-mono text-sm font-semibold text-primary">
+                    {activeBrand?.bank_swift_code || (activeBrand?.bank_name ? 'Auto (Direct Payout)' : '—')}
+                  </p>
+                </div>
+                <div>
                   <label className="text-base-content/60 font-medium block mb-1">Account Holder Name</label>
                   <p className="font-semibold text-sm text-base-content">{activeBrand?.bank_account_holder || activeBrand?.name || '-'}</p>
                 </div>
@@ -269,7 +275,7 @@ export default function VendorProfilePage() {
                   <label className="text-base-content/60 font-medium block mb-1">Bank Account Number</label>
                   <p className="font-mono text-sm font-semibold text-base-content">{activeBrand?.bank_account_number || '•••• •••• ••••'}</p>
                 </div>
-                <div>
+                <div className="sm:col-span-2">
                   <label className="text-base-content/60 font-medium block mb-1">Disbursement Schedule</label>
                   <div className="flex items-center gap-1.5 text-primary font-semibold">
                     <Calendar className="w-3.5 h-3.5" />

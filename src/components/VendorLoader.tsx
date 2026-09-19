@@ -1,36 +1,73 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
-import { ShieldCheck, Store, Zap } from "lucide-react";
+import { ShieldCheck, Store, Zap, Sparkles, RefreshCw, Lightbulb } from "lucide-react";
 
 interface VendorLoaderProps {
   label?: string;
   sublabel?: string;
+  stages?: string[];
+  tips?: string[];
+  fullScreen?: boolean;
 }
 
-const loadingStages = [
+const defaultLoadingStages = [
   "Connecting to Multi-Brand Partner Hub...",
   "Synchronizing vendor catalog & rates...",
   "Loading settlement & ledger matrices...",
   "Preparing your workspace...",
 ];
 
+const defaultVendorTips = [
+  "Changes to bank disbursement accounts take effect on the next weekly payout cycle.",
+  "High-resolution logos with square aspect ratio (1:1) give your brand the best visibility.",
+  "Keep your official contact person details updated for real-time order & settlement alerts.",
+  "Class tier upgrades unlock lower commission rates and prioritized payout processing.",
+];
+
 export default function VendorLoader({
   label = "VAMOFLEX Vendor Hub",
   sublabel,
+  stages = defaultLoadingStages,
+  tips = defaultVendorTips,
+  fullScreen = true,
 }: VendorLoaderProps) {
   const [mounted, setMounted] = useState(false);
   const [stageIndex, setStageIndex] = useState(0);
+  const [tipIndex, setTipIndex] = useState(0);
+  const [progress, setProgress] = useState(15);
+  const [isPinging, setIsPinging] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMounted(true);
-    const interval = setInterval(() => {
-      setStageIndex((prev) => (prev + 1) % loadingStages.length);
-    }, 1800);
-    return () => clearInterval(interval);
-  }, []);
+
+    // Progress bar simulation
+    const progressInterval = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 92) return prev;
+        const jump = Math.floor(Math.random() * 12) + 6;
+        return Math.min(prev + jump, 92);
+      });
+    }, 400);
+
+    // Stage rotation
+    const stageInterval = setInterval(() => {
+      setStageIndex((prev) => (prev + 1) % stages.length);
+    }, 2000);
+
+    // Tip rotation
+    const tipInterval = setInterval(() => {
+      setTipIndex((prev) => (prev + 1) % tips.length);
+    }, 4500);
+
+    return () => {
+      clearInterval(progressInterval);
+      clearInterval(stageInterval);
+      clearInterval(tipInterval);
+    };
+  }, [stages.length, tips.length]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!containerRef.current) return;
@@ -44,13 +81,23 @@ export default function VendorLoader({
     setMousePos({ x: 0, y: 0 });
   };
 
+  const handleLogoClick = () => {
+    setIsPinging(true);
+    setTipIndex((prev) => (prev + 1) % tips.length);
+    setTimeout(() => setIsPinging(false), 700);
+  };
+
+  const containerClasses = fullScreen
+    ? "min-h-screen w-full flex items-center justify-center bg-base-200/80 relative overflow-hidden select-none p-4"
+    : "min-h-[480px] w-full flex items-center justify-center bg-base-200/40 rounded-3xl relative overflow-hidden select-none p-6 my-4 border border-base-300/60";
+
   return (
     <div
       ref={containerRef}
       suppressHydrationWarning
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className="min-h-screen w-full flex items-center justify-center bg-base-200/80 relative overflow-hidden select-none p-4"
+      className={containerClasses}
     >
       {/* Background ambient lighting */}
       <div
@@ -66,7 +113,7 @@ export default function VendorLoader({
       {/* Main glass card with 3D tilt */}
       <div
         suppressHydrationWarning
-        className="relative z-10 flex flex-col items-center max-w-sm w-full bg-base-100/90 backdrop-blur-xl border border-base-300/70 rounded-3xl p-8 shadow-xl transition-transform duration-300 ease-out"
+        className="relative z-10 flex flex-col items-center max-w-md w-full bg-base-100/95 backdrop-blur-xl border border-base-300/80 rounded-3xl p-7 sm:p-8 shadow-2xl transition-transform duration-200 ease-out"
         style={
           mounted
             ? {
@@ -76,7 +123,7 @@ export default function VendorLoader({
         }
       >
         {/* Centered SVG Loader with Center Logo */}
-        <div suppressHydrationWarning className="relative w-36 h-36 flex items-center justify-center mb-6">
+        <div suppressHydrationWarning className="relative w-36 h-36 flex items-center justify-center mb-5">
           <svg
             viewBox="0 0 160 160"
             className="w-full h-full"
@@ -177,50 +224,101 @@ export default function VendorLoader({
             </g>
           </svg>
 
-          {/* Centered Brand Icon */}
-          <div suppressHydrationWarning className="absolute inset-0 m-auto w-16 h-16 rounded-2xl bg-base-100 shadow-md border border-base-200/80 flex items-center justify-center pointer-events-auto group cursor-pointer transition-transform duration-300 hover:scale-105">
-            <div suppressHydrationWarning className="absolute inset-0 rounded-2xl bg-primary/10 animate-ping opacity-25" />
+          {/* Centered Brand Icon with Click Interactive Ripple */}
+          <button
+            type="button"
+            onClick={handleLogoClick}
+            title="Click to interact"
+            suppressHydrationWarning
+            className="absolute inset-0 m-auto w-16 h-16 rounded-2xl bg-base-100 shadow-lg border border-base-200/80 flex items-center justify-center pointer-events-auto group cursor-pointer transition-all duration-300 hover:scale-110 active:scale-95"
+          >
+            <div
+              suppressHydrationWarning
+              className={`absolute inset-0 rounded-2xl bg-primary/20 ${isPinging ? 'animate-ping' : 'animate-pulse opacity-40'}`}
+            />
             <img
               src="/images/logo/preloader_icon.png"
               alt="VAMOFLEX"
-              className="w-10 h-10 object-contain drop-shadow-sm transition-transform duration-300 group-hover:scale-110"
+              className="w-10 h-10 object-contain drop-shadow-sm transition-transform duration-300 group-hover:scale-110 group-active:rotate-12"
             />
-          </div>
+          </button>
         </div>
 
         {/* Text and stages */}
-        <div suppressHydrationWarning className="text-center space-y-2 w-full">
-          <div suppressHydrationWarning className="flex items-center justify-center gap-1.5">
+        <div suppressHydrationWarning className="text-center space-y-3 w-full">
+          <div suppressHydrationWarning className="flex items-center justify-center gap-2">
             <h3 className="font-bold text-sm text-base-content tracking-tight">
               {label}
             </h3>
-            <span className="badge badge-primary badge-xs uppercase font-bold text-[9px] px-1.5">
-              Live
+            <span className="badge badge-primary badge-xs uppercase font-bold text-[9px] px-1.5 py-0.5">
+              Syncing {progress}%
             </span>
           </div>
 
-          <p suppressHydrationWarning className="text-xs text-base-content/60 h-4 font-medium transition-all duration-300">
-            {sublabel || loadingStages[stageIndex]}
+          <p suppressHydrationWarning className="text-xs text-base-content/70 h-5 font-medium transition-all duration-300 flex items-center justify-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-primary animate-spin" style={{ animationDuration: '3s' }} />
+            <span>{sublabel || stages[stageIndex]}</span>
           </p>
 
           {/* Animated progress bar */}
-          <div suppressHydrationWarning className="w-full bg-base-200 rounded-full h-1.5 overflow-hidden mt-3">
-            <div suppressHydrationWarning className="h-full bg-primary rounded-full animate-[shimmer_1.8s_ease-in-out_infinite] w-full origin-left" />
+          <div suppressHydrationWarning className="w-full bg-base-200 rounded-full h-1.5 overflow-hidden">
+            <div
+              suppressHydrationWarning
+              className="h-full bg-primary rounded-full transition-all duration-500 ease-out"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+
+          {/* Interactive stage pill chips */}
+          <div suppressHydrationWarning className="flex items-center justify-center gap-1.5 pt-1">
+            {stages.map((stg, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setStageIndex(i)}
+                className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+                  stageIndex === i
+                    ? 'w-6 bg-primary'
+                    : 'w-2 bg-base-300 hover:bg-base-content/30'
+                }`}
+                title={stg}
+              />
+            ))}
+          </div>
+
+          {/* Rotating Interactive Vendor Pro-Tip Card */}
+          <div
+            onClick={() => setTipIndex((prev) => (prev + 1) % tips.length)}
+            className="p-3 bg-base-200/60 hover:bg-base-200 rounded-2xl border border-base-300/80 text-left cursor-pointer transition-colors group mt-2"
+          >
+            <div className="flex items-center justify-between text-[10px] font-bold text-primary mb-1">
+              <span className="flex items-center gap-1">
+                <Lightbulb className="w-3.5 h-3.5 text-warning" />
+                <span>Vendor Pro-Tip</span>
+              </span>
+              <span className="text-base-content/40 group-hover:text-primary transition-colors flex items-center gap-0.5">
+                <span>Next</span>
+                <RefreshCw className="w-2.5 h-2.5" />
+              </span>
+            </div>
+            <p className="text-[11px] text-base-content/70 leading-relaxed font-medium">
+              {tips[tipIndex]}
+            </p>
           </div>
 
           {/* Status badges */}
-          <div suppressHydrationWarning className="pt-3 flex items-center justify-center gap-4 text-[11px] text-base-content/50 border-t border-base-200/80 mt-3">
+          <div suppressHydrationWarning className="pt-2 flex items-center justify-center gap-4 text-[11px] text-base-content/50 border-t border-base-200/80">
             <span className="flex items-center gap-1">
               <ShieldCheck className="w-3.5 h-3.5 text-success" />
               Encrypted
             </span>
             <span className="flex items-center gap-1">
               <Zap className="w-3.5 h-3.5 text-warning" />
-              Fast Sync
+              Live Feed
             </span>
             <span className="flex items-center gap-1">
               <Store className="w-3.5 h-3.5 text-primary" />
-              Brand Hub
+              Partner Portal
             </span>
           </div>
         </div>
@@ -228,3 +326,4 @@ export default function VendorLoader({
     </div>
   );
 }
+

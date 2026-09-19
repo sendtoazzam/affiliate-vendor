@@ -17,6 +17,22 @@ import {
   Calendar,
   Lock,
 } from 'lucide-react';
+import VendorLoader from '@/components/VendorLoader';
+import { SUPPORTED_BANKS, findBankByName } from '@/lib/banks';
+
+const profileLoadingStages = [
+  'Retrieving brand identity & logo assets...',
+  'Loading bank disbursement coordinates...',
+  'Fetching official contact points & managers...',
+  'Preparing profile configuration editor...',
+];
+
+const profileLoadingTips = [
+  'Changes to bank disbursement accounts take effect on the next weekly payout cycle.',
+  'Your brand slug and username are unique permanent identifiers on the marketplace.',
+  'High-resolution logos with square aspect ratio (1:1) look best on the storefront.',
+  'Ensure contact email is monitored for real-time order and settlement notices.',
+];
 
 export default function EditVendorProfilePage() {
   const router = useRouter();
@@ -45,6 +61,7 @@ export default function EditVendorProfilePage() {
     bank_name: '',
     bank_account_holder: '',
     bank_account_number: '',
+    bank_swift_code: '',
   });
 
   useEffect(() => {
@@ -54,6 +71,9 @@ export default function EditVendorProfilePage() {
         const data = await vendorApi.getProfile();
         const b = data?.brand || brand;
         const u = data?.user || user;
+
+        const initialBank = b?.bank_name || '';
+        const initialSwift = b?.bank_swift_code || (initialBank ? findBankByName(initialBank)?.swift_code : '') || '';
 
         setFormData({
           first_name: u?.first_name || '',
@@ -71,9 +91,10 @@ export default function EditVendorProfilePage() {
           contact_email: b?.contact_email || u?.email || '',
           contact_phone: b?.contact_phone || '',
 
-          bank_name: b?.bank_name || '',
+          bank_name: initialBank,
           bank_account_holder: b?.bank_account_holder || b?.name || '',
           bank_account_number: b?.bank_account_number || '',
+          bank_swift_code: initialSwift,
         });
       } catch (err) {
         console.error('Failed to load profile for editing:', err);
@@ -91,6 +112,16 @@ export default function EditVendorProfilePage() {
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleBankChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedBankName = e.target.value;
+    const foundBank = findBankByName(selectedBankName);
+    setFormData((prev) => ({
+      ...prev,
+      bank_name: selectedBankName,
+      bank_swift_code: foundBank ? foundBank.swift_code : prev.bank_swift_code,
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -113,6 +144,7 @@ export default function EditVendorProfilePage() {
         bank_name: formData.bank_name,
         bank_account_holder: formData.bank_account_holder,
         bank_account_number: formData.bank_account_number,
+        bank_swift_code: formData.bank_swift_code,
       });
 
       if (refreshBrand) {
@@ -136,9 +168,13 @@ export default function EditVendorProfilePage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <span className="loading loading-spinner loading-lg text-primary"></span>
-      </div>
+      <VendorLoader
+        fullScreen={false}
+        label="Vendor Profile & Brand Editor"
+        sublabel="Loading your brand credentials and banking data..."
+        stages={profileLoadingStages}
+        tips={profileLoadingTips}
+      />
     );
   }
 
@@ -474,24 +510,95 @@ export default function EditVendorProfilePage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="form-control">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Bank Name Dropdown */}
+              <div className="form-control sm:col-span-2 lg:col-span-2">
                 <label className="label py-1">
                   <span className="label-text text-xs font-semibold text-base-content/70">
                     Bank Name
                   </span>
+                  <span className="label-text-alt text-[10px] text-base-content/50">
+                    Select financial institution
+                  </span>
                 </label>
-                <input
-                  type="text"
+                <select
                   name="bank_name"
                   value={formData.bank_name}
-                  onChange={handleChange}
-                  className="input input-bordered input-sm w-full focus:input-primary"
-                  placeholder="e.g. Maybank / CIMB"
-                />
+                  onChange={handleBankChange}
+                  className="select select-bordered select-sm w-full font-medium focus:select-primary"
+                >
+                  <option value="">Select Bank / Financial Institution</option>
+
+                  <optgroup label="Malaysia (Local Commercial & Islamic Banks)">
+                    {SUPPORTED_BANKS.filter((b) => b.country === 'MY').map((bank) => (
+                      <option key={bank.swift_code + bank.name} value={bank.name}>
+                        {bank.name} ({bank.swift_code})
+                      </option>
+                    ))}
+                  </optgroup>
+
+                  <optgroup label="Singapore & Regional Banks">
+                    {SUPPORTED_BANKS.filter((b) => b.country === 'SG').map((bank) => (
+                      <option key={bank.swift_code + bank.name} value={bank.name}>
+                        {bank.name} ({bank.swift_code})
+                      </option>
+                    ))}
+                  </optgroup>
+
+                  <optgroup label="Indonesia Banks">
+                    {SUPPORTED_BANKS.filter((b) => b.country === 'ID').map((bank) => (
+                      <option key={bank.swift_code + bank.name} value={bank.name}>
+                        {bank.name} ({bank.swift_code})
+                      </option>
+                    ))}
+                  </optgroup>
+
+                  <optgroup label="Thailand Banks">
+                    {SUPPORTED_BANKS.filter((b) => b.country === 'TH').map((bank) => (
+                      <option key={bank.swift_code + bank.name} value={bank.name}>
+                        {bank.name} ({bank.swift_code})
+                      </option>
+                    ))}
+                  </optgroup>
+
+                  {/* Fallback option if vendor's current bank name is not in standard list */}
+                  {formData.bank_name && !SUPPORTED_BANKS.some((b) => b.name === formData.bank_name) && (
+                    <optgroup label="Custom / Other Bank">
+                      <option value={formData.bank_name}>{formData.bank_name}</option>
+                    </optgroup>
+                  )}
+                </select>
               </div>
 
-              <div className="form-control">
+              {/* SWIFT / BIC Code Input */}
+              <div className="form-control sm:col-span-2 lg:col-span-2">
+                <label className="label py-1">
+                  <span className="label-text text-xs font-semibold text-base-content/70">
+                    SWIFT / BIC Code
+                  </span>
+                  <span className="label-text-alt text-[10px] text-primary font-mono font-bold">
+                    {formData.bank_swift_code ? 'Auto-synced' : 'Auto-filled on select'}
+                  </span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    name="bank_swift_code"
+                    value={formData.bank_swift_code}
+                    onChange={handleChange}
+                    className="input input-bordered input-sm w-full focus:input-primary font-mono uppercase tracking-wider pr-16"
+                    placeholder="e.g. PBBEMYKL"
+                  />
+                  {formData.bank_swift_code && (
+                    <span className="badge badge-xs badge-primary font-mono font-bold uppercase absolute right-2.5 top-1/2 -translate-y-1/2">
+                      SWIFT
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Account Holder Name */}
+              <div className="form-control sm:col-span-2 lg:col-span-2">
                 <label className="label py-1">
                   <span className="label-text text-xs font-semibold text-base-content/70">
                     Account Holder Name
@@ -507,7 +614,8 @@ export default function EditVendorProfilePage() {
                 />
               </div>
 
-              <div className="form-control">
+              {/* Bank Account Number */}
+              <div className="form-control sm:col-span-2 lg:col-span-2">
                 <label className="label py-1">
                   <span className="label-text text-xs font-semibold text-base-content/70">
                     Bank Account Number

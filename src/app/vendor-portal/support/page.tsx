@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   HelpCircle,
@@ -28,46 +28,209 @@ import {
   Lock,
   Scale,
 } from 'lucide-react';
+import { useAuth } from '@/lib/auth-context';
+
+interface SupportChannel {
+  id: string;
+  title: string;
+  description: string;
+  card_icon?: string;
+  button_text: string;
+  button_icon?: string;
+  link: string;
+  target?: string;
+}
+
+interface FaqItem {
+  q: string;
+  a: string;
+  category?: string;
+}
+
+const DEFAULT_CHANNELS: SupportChannel[] = [
+  {
+    id: 'whatsapp',
+    title: 'WhatsApp Partner Desk',
+    description: 'Direct chat with our merchant relations team for urgent fulfillment issues.',
+    card_icon: 'MessageCircle',
+    button_text: 'Chat on WhatsApp',
+    button_icon: 'MessageCircle',
+    link: 'https://wa.me/60123456789',
+    target: '_blank',
+  },
+  {
+    id: 'email',
+    title: 'Email Support',
+    description: 'Send detailed inquiries, statements, or tier upgrade applications to our desk.',
+    card_icon: 'Mail',
+    button_text: 'Email Support Desk',
+    button_icon: 'Mail',
+    link: 'mailto:partner-support@vamoflex.com',
+    target: '_self',
+  },
+  {
+    id: 'operating_hours',
+    title: 'Operating Hours',
+    description: 'Monday – Friday: 9:00 AM – 6:00 PM (MYT)\nLogistics Hub operates 7 days a week.',
+    card_icon: 'Clock',
+    button_text: 'Call Hotline Desk',
+    button_icon: 'Phone',
+    link: 'https://wa.me/60123456789?text=Urgent%20Logistics%20Support',
+    target: '_blank',
+  },
+];
+
+const DEFAULT_FAQS: FaqItem[] = [
+  {
+    q: 'How does the weekly settlement cycle work?',
+    a: 'The settlement period runs weekly with a Sunday 11:59 PM cutoff. All completed orders within that period are calculated and disbursed directly to your registered bank account every Wednesday. You can review detailed statements and historical payout PDFs in the Accounting & Payouts section.',
+    category: 'Accounting',
+  },
+  {
+    q: 'What is the difference between Settlement Classes (Kelas A, Kelas B, Kelas C)?',
+    a: 'Settlement classes define your brand payout rate based on sales volume and tier agreement: Kelas A (45% rate), Kelas B (50% standard rate), and Kelas C (55% high-volume partner rate). If your sales consistently reach higher tiers, you can request an upgrade.',
+    category: 'Accounting',
+  },
+  {
+    q: 'How does Single Hub Logistics & Fulfillment operate?',
+    a: 'All customer shipments across all partner brands are consolidated and fulfilled centrally via the VAMOFLEX Central Logistics Hub. Once your stock is received and verified at the central warehouse, order dispatch, delivery tracking, and courier handling are fully managed by our logistics team.',
+    category: 'Logistics',
+  },
+  {
+    q: 'How do I submit or update product listings?',
+    a: 'Navigate to Catalog > Add Product to draft new SKU items. All newly submitted products undergo a quick compliance and category check before becoming live on the storefront. You can track approval states under Manage Products.',
+    category: 'Catalog',
+  },
+  {
+    q: 'How do I update my bank payout details or brand contact?',
+    a: 'For security and fraud prevention, bank account modifications require verification. Please submit an inquiry through this support portal or contact your account manager directly with supporting bank statement documentation.',
+    category: 'Account',
+  },
+];
+
+const renderIcon = (name?: string, className = 'w-5 h-5') => {
+  switch (name?.toLowerCase()) {
+    case 'messagecircle':
+    case 'message-circle':
+    case 'whatsapp':
+      return <MessageCircle className={className} />;
+    case 'mail':
+    case 'email':
+      return <Mail className={className} />;
+    case 'clock':
+    case 'time':
+    case 'operating_hours':
+      return <Clock className={className} />;
+    case 'phone':
+    case 'call':
+      return <Phone className={className} />;
+    case 'send':
+      return <Send className={className} />;
+    default:
+      return <HelpCircle className={className} />;
+  }
+};
 
 export default function VendorSupportPage() {
+  const { hasPermission, user, brand } = useAuth();
+  const [channels, setChannels] = useState<SupportChannel[]>(DEFAULT_CHANNELS);
+  const [faqs, setFaqs] = useState<FaqItem[]>(DEFAULT_FAQS);
+  const [whatsappInquiryNumber, setWhatsappInquiryNumber] = useState('60123456789');
   const [ticketSubmitted, setTicketSubmitted] = useState(false);
   const [subject, setSubject] = useState('');
   const [category, setCategory] = useState('settlement');
   const [message, setMessage] = useState('');
 
+  useEffect(() => {
+    let isMounted = true;
+    const fetchSupportData = async () => {
+      try {
+        const res = await fetch(`/data/support-channels.json?t=${Date.now()}`, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+          },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (isMounted) {
+            if (data.whatsapp_inquiry_number) {
+              setWhatsappInquiryNumber(data.whatsapp_inquiry_number);
+            }
+            if (Array.isArray(data.channels) && data.channels.length > 0) {
+              setChannels(data.channels);
+            }
+            if (Array.isArray(data.faqs) && data.faqs.length > 0) {
+              setFaqs(data.faqs);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load support-channels.json', err);
+      }
+    };
+
+    fetchSupportData();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  if (!hasPermission('vendor.support.view')) {
+    return (
+      <div className="card bg-base-100 border border-base-300 shadow-sm p-8 text-center max-w-lg mx-auto my-12 space-y-4">
+        <div className="w-14 h-14 rounded-2xl bg-error/10 text-error flex items-center justify-center mx-auto">
+          <Lock className="w-7 h-7" />
+        </div>
+        <h2 className="text-lg font-bold text-base-content">Access Restricted</h2>
+        <p className="text-xs text-base-content/60 leading-relaxed">
+          You do not have permission to access the Vendor Support & Help Desk. If you need assistance, please contact your administrator or brand owner.
+        </p>
+        <div>
+          <Link
+            href="/vendor-portal/dashboard"
+            className="btn btn-primary btn-sm text-white font-semibold"
+          >
+            Return to Dashboard
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const categoryLabels: Record<string, string> = {
+    settlement: 'Settlement & Payouts',
+    catalog: 'Product Catalog & Listing',
+    logistics: 'Central Hub Logistics & Stock',
+    account: 'Account & Banking Details',
+    other: 'General Inquiry',
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim()) return;
+
+    const brandName = brand?.name || user?.name || 'Vendor Partner';
+    const categoryName = categoryLabels[category] || category;
+
+    const textLines = [
+      `*New Vendor Inquiry*`,
+      `• *Brand/Partner:* ${brandName}`,
+      `• *Category:* ${categoryName}`,
+      `• *Subject:* ${subject.trim() || 'No Subject'}`,
+      ``,
+      `*Message Details:*`,
+      message.trim(),
+    ];
+
+    const encodedText = encodeURIComponent(textLines.join('\n'));
+    const phone = (whatsappInquiryNumber || '60123456789').replace(/[^0-9]/g, '');
+    const waUrl = `https://wa.me/${phone}?text=${encodedText}`;
+
+    window.open(waUrl, '_blank');
     setTicketSubmitted(true);
   };
-
-  const faqs = [
-    {
-      q: 'How does the weekly settlement cycle work?',
-      a: 'The settlement period runs weekly with a Sunday 11:59 PM cutoff. All completed orders within that period are calculated and disbursed directly to your registered bank account every Wednesday. You can review detailed statements and historical payout PDFs in the Accounting & Payouts section.',
-      category: 'Accounting',
-    },
-    {
-      q: 'What is the difference between Settlement Classes (Kelas A, Kelas B, Kelas C)?',
-      a: 'Settlement classes define your brand payout rate based on sales volume and tier agreement: Kelas A (45% rate), Kelas B (50% standard rate), and Kelas C (55% high-volume partner rate). If your sales consistently reach higher tiers, you can request an upgrade.',
-      category: 'Accounting',
-    },
-    {
-      q: 'How does Single Hub Logistics & Fulfillment operate?',
-      a: 'All customer shipments across all partner brands are consolidated and fulfilled centrally via the VAMOFLEX Central Logistics Hub. Once your stock is received and verified at the central warehouse, order dispatch, delivery tracking, and courier handling are fully managed by our logistics team.',
-      category: 'Logistics',
-    },
-    {
-      q: 'How do I submit or update product listings?',
-      a: 'Navigate to Catalog > Add Product to draft new SKU items. All newly submitted products undergo a quick compliance and category check before becoming live on the storefront. You can track approval states under Manage Products.',
-      category: 'Catalog',
-    },
-    {
-      q: 'How do I update my bank payout details or brand contact?',
-      a: 'For security and fraud prevention, bank account modifications require verification. Please submit an inquiry through this support portal or contact your account manager directly with supporting bank statement documentation.',
-      category: 'Account',
-    },
-  ];
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto pb-12">
@@ -84,79 +247,35 @@ export default function VendorSupportPage() {
 
       {/* Quick Action Channels */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="card bg-base-100 border border-base-300 shadow-sm hover:border-primary/40 transition-colors">
-          <div className="card-body p-5 flex flex-col justify-between">
-            <div>
-              <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-3">
-                <MessageCircle className="w-5 h-5" />
+        {channels.map((channel) => (
+          <div
+            key={channel.id}
+            className="card bg-base-100 border border-base-300 shadow-sm hover:border-primary/40 transition-colors"
+          >
+            <div className="card-body p-5 flex flex-col justify-between">
+              <div>
+                <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-3">
+                  {renderIcon(channel.card_icon || channel.id, 'w-5 h-5')}
+                </div>
+                <h3 className="font-bold text-sm text-base-content">{channel.title}</h3>
+                <p className="text-xs text-base-content/60 mt-1 whitespace-pre-line">
+                  {channel.description}
+                </p>
               </div>
-              <h3 className="font-bold text-sm text-base-content">WhatsApp Partner Desk</h3>
-              <p className="text-xs text-base-content/60 mt-1">
-                Direct chat with our merchant relations team for urgent fulfillment issues.
-              </p>
-            </div>
-            <div className="card-actions mt-4">
-              <a
-                href="https://wa.me/60123456789"
-                target="_blank"
-                rel="noreferrer"
-                className="btn btn-outline btn-primary btn-sm w-full font-semibold gap-2"
-              >
-                <MessageCircle className="w-3.5 h-3.5" />
-                <span>Chat on WhatsApp</span>
-              </a>
+              <div className="card-actions mt-4">
+                <a
+                  href={channel.link}
+                  target={channel.target || '_self'}
+                  rel={channel.target === '_blank' ? 'noreferrer' : undefined}
+                  className="btn btn-outline btn-primary btn-sm w-full font-semibold gap-2"
+                >
+                  {renderIcon(channel.button_icon || channel.card_icon || channel.id, 'w-3.5 h-3.5')}
+                  <span>{channel.button_text}</span>
+                </a>
+              </div>
             </div>
           </div>
-        </div>
-
-        <div className="card bg-base-100 border border-base-300 shadow-sm hover:border-primary/40 transition-colors">
-          <div className="card-body p-5 flex flex-col justify-between">
-            <div>
-              <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-3">
-                <Mail className="w-5 h-5" />
-              </div>
-              <h3 className="font-bold text-sm text-base-content">Email Support</h3>
-              <p className="text-xs text-base-content/60 mt-1">
-                Send detailed inquiries, statements, or tier upgrade applications to our desk.
-              </p>
-            </div>
-            <div className="card-actions mt-4">
-              <a
-                href="mailto:partner-support@vamoflex.com"
-                className="btn btn-outline btn-primary btn-sm w-full font-semibold gap-2"
-              >
-                <Mail className="w-3.5 h-3.5" />
-                <span>Email Support Desk</span>
-              </a>
-            </div>
-          </div>
-        </div>
-
-        <div className="card bg-base-100 border border-base-300 shadow-sm hover:border-primary/40 transition-colors">
-          <div className="card-body p-5 flex flex-col justify-between">
-            <div>
-              <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-3">
-                <Clock className="w-5 h-5" />
-              </div>
-              <h3 className="font-bold text-sm text-base-content">Operating Hours</h3>
-              <p className="text-xs text-base-content/60 mt-1">
-                Monday – Friday: 9:00 AM – 6:00 PM (MYT)<br />
-                Logistics Hub operates 7 days a week.
-              </p>
-            </div>
-            <div className="card-actions mt-4">
-              <a
-                href="https://wa.me/60123456789?text=Urgent%20Logistics%20Support"
-                target="_blank"
-                rel="noreferrer"
-                className="btn btn-outline btn-primary btn-sm w-full font-semibold gap-2"
-              >
-                <Phone className="w-3.5 h-3.5" />
-                <span>Call Hotline Desk</span>
-              </a>
-            </div>
-          </div>
-        </div>
+        ))}
       </div>
 
       {/* FAQs and Support Ticket Grid */}
@@ -172,7 +291,7 @@ export default function VendorSupportPage() {
             {faqs.map((faq, idx) => (
               <div
                 key={idx}
-                className="collapse collapse-arrow bg-base-100 border border-base-300 rounded-xl"
+                className="collapse collapse-plus bg-base-100 border border-base-300 rounded-xl shadow-xs"
               >
                 <input type="checkbox" name="faq-accordion" />
                 <div className="collapse-title text-sm font-semibold text-base-content flex items-center gap-2 pr-8">
@@ -185,28 +304,33 @@ export default function VendorSupportPage() {
             ))}
           </div>
 
-          <div className="p-4 bg-base-100 rounded-xl border border-base-300 text-xs flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Receipt className="w-4 h-4 text-primary" />
-              <span className="text-base-content/80">Need to view recent invoices or statements?</span>
+          {hasPermission('vendor.accounting.view') && (
+            <div className="p-4 bg-base-100 rounded-xl border border-base-300 text-xs flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Receipt className="w-4 h-4 text-primary" />
+                <span className="text-base-content/80">Need to view recent invoices or statements?</span>
+              </div>
+              <Link
+                href="/vendor-portal/accounting"
+                className="text-primary font-semibold hover:underline flex items-center gap-1"
+              >
+                <span>Go to Accounting</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </Link>
             </div>
-            <Link
-              href="/vendor-portal/accounting"
-              className="text-primary font-semibold hover:underline flex items-center gap-1"
-            >
-              <span>Go to Accounting</span>
-              <ChevronRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
+          )}
         </div>
 
         {/* Right 2 cols: Ticket / Message Form */}
         <div className="lg:col-span-2">
           <div className="card bg-base-100 border border-base-300 shadow-sm sticky top-24">
             <div className="card-body p-6">
-              <h2 className="text-base font-bold text-base-content">Submit an Inquiry</h2>
+              <h2 className="text-base font-bold text-base-content flex items-center gap-2">
+                <MessageCircle className="w-4 h-4 text-primary" />
+                <span>Submit an Inquiry</span>
+              </h2>
               <p className="text-xs text-base-content/60 mb-4">
-                Have a specific question? Send a message directly to vendor operations.
+                Have a specific question? Send your message directly to vendor operations via WhatsApp.
               </p>
 
               {ticketSubmitted ? (
@@ -214,9 +338,9 @@ export default function VendorSupportPage() {
                   <div className="w-12 h-12 rounded-full bg-success/20 text-success flex items-center justify-center mx-auto">
                     <CheckCircle2 className="w-6 h-6" />
                   </div>
-                  <h3 className="font-bold text-sm text-base-content">Inquiry Received</h3>
+                  <h3 className="font-bold text-sm text-base-content">WhatsApp Chat Opened</h3>
                   <p className="text-xs text-base-content/70">
-                    Your ticket has been logged with our support team. We will reply to your registered account email within 1 business day.
+                    Your inquiry has been formatted and opened in WhatsApp. If WhatsApp did not open automatically, you can click below to try again.
                   </p>
                   <button
                     type="button"
@@ -227,7 +351,7 @@ export default function VendorSupportPage() {
                     }}
                     className="btn btn-outline btn-xs font-semibold mt-2"
                   >
-                    Submit Another Inquiry
+                    Send Another Inquiry
                   </button>
                 </div>
               ) : (
@@ -281,8 +405,8 @@ export default function VendorSupportPage() {
                     type="submit"
                     className="btn btn-primary btn-sm w-full gap-2 text-xs font-semibold"
                   >
-                    <Send className="w-3.5 h-3.5" />
-                    <span>Send Inquiry</span>
+                    <MessageCircle className="w-3.5 h-3.5" />
+                    <span>Send Inquiry via WhatsApp</span>
                   </button>
                 </form>
               )}
@@ -378,129 +502,147 @@ export default function VendorSupportPage() {
         </div>
       </div>
 
-      {/* 3 Footer Shortcut Cards with Animated Hover Chevron */}
-      <div className="space-y-4 pt-4 border-t border-base-300">
-        <h2 className="text-base font-bold text-base-content flex items-center gap-2">
-          <LayoutDashboard className="w-4 h-4 text-primary" />
-          <span>Vendor Hub Shortcuts</span>
-        </h2>
+      {/* Footer Shortcut Cards - Follows Vendor ACL */}
+      {(() => {
+        const shortcutGroups = [
+          {
+            title: 'Catalog',
+            desc: 'Manage inventory listings, create new products, and track product level velocity.',
+            icon: Package,
+            items: [
+              {
+                label: 'Manage Products',
+                href: '/vendor-portal/catalog/manage-product',
+                icon: Boxes,
+                permission: ['vendor.catalog.view', 'vendor.catalog.manage'],
+              },
+              {
+                label: 'Add New Product',
+                href: '/vendor-portal/catalog/add-product',
+                icon: PlusCircle,
+                permission: 'vendor.catalog.create',
+              },
+              {
+                label: 'NCS Leaderboard',
+                href: '/vendor-portal/catalog/performance',
+                icon: TrendingUp,
+                permission: ['vendor.catalog.performance', 'vendor.catalog.leaderboard'],
+              },
+              {
+                label: 'Catalog Breakdown',
+                href: '/vendor-portal/catalog/breakdown',
+                icon: Layers,
+                permission: 'vendor.catalog.breakdown',
+              },
+            ],
+          },
+          {
+            title: 'Insights & Analytics',
+            desc: 'Detailed sales reports, NCS contribution breakdown, and XLS export for accounting.',
+            icon: BarChart3,
+            items: [
+              {
+                label: 'Sales Report & Breakdown',
+                href: '/vendor-portal/insights/sales-report',
+                icon: BarChart3,
+                permission: ['vendor.insights.sales', 'vendor.insights.sales_report'],
+              },
+              {
+                label: 'Performance Report (XLS)',
+                href: '/vendor-portal/insights/performance-report',
+                icon: FileSpreadsheet,
+                permission: ['vendor.insights.performance', 'vendor.insights.performance_report'],
+              },
+            ],
+          },
+          {
+            title: 'Accounting & Settlements',
+            desc: 'Inspect weekly statements, verify bank details, or apply for a higher settlement class.',
+            icon: Receipt,
+            items: [
+              {
+                label: 'Payout Statements',
+                href: '/vendor-portal/accounting',
+                icon: Receipt,
+                permission: 'vendor.accounting.view',
+              },
+              {
+                label: 'Settlement Plan & Tiers',
+                href: '/vendor-portal/settlement-plan',
+                icon: Layers,
+                permission: 'vendor.settlement_plan.view',
+              },
+            ],
+          },
+        ];
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {/* Catalog Group */}
-          <div className="card bg-base-100 border border-base-300 shadow-sm hover:shadow-md transition-shadow">
-            <div className="card-body p-5 flex flex-col justify-between space-y-4">
-              <div>
-                <div className="flex items-center gap-2 text-primary font-bold text-sm mb-1">
-                  <Package className="w-4 h-4" />
-                  <span>Catalog</span>
-                </div>
-                <p className="text-xs text-base-content/60">
-                  Manage inventory listings, create new products, and track product level velocity.
-                </p>
-              </div>
-              <div className="space-y-1.5 pt-2 border-t border-base-200">
-                <Link
-                  href="/vendor-portal/catalog/manage-product"
-                  className="group flex items-center justify-between text-xs py-2 px-3 rounded-lg hover:bg-base-200 text-base-content/80 hover:text-primary transition-all duration-200 font-medium"
-                >
-                  <span className="flex items-center gap-2">
-                    <Boxes className="w-3.5 h-3.5" /> Manage Products
-                  </span>
-                  <ChevronRight className="w-4 h-4 text-base-content/40 group-hover:text-primary group-hover:translate-x-1 transition-all duration-200" />
-                </Link>
-                <Link
-                  href="/vendor-portal/catalog/add-product"
-                  className="group flex items-center justify-between text-xs py-2 px-3 rounded-lg hover:bg-base-200 text-base-content/80 hover:text-primary transition-all duration-200 font-medium"
-                >
-                  <span className="flex items-center gap-2">
-                    <PlusCircle className="w-3.5 h-3.5" /> Add New Product
-                  </span>
-                  <ChevronRight className="w-4 h-4 text-base-content/40 group-hover:text-primary group-hover:translate-x-1 transition-all duration-200" />
-                </Link>
-                <Link
-                  href="/vendor-portal/catalog/performance"
-                  className="group flex items-center justify-between text-xs py-2 px-3 rounded-lg hover:bg-base-200 text-base-content/80 hover:text-primary transition-all duration-200 font-medium"
-                >
-                  <span className="flex items-center gap-2">
-                    <TrendingUp className="w-3.5 h-3.5" /> NCS Leaderboard
-                  </span>
-                  <ChevronRight className="w-4 h-4 text-base-content/40 group-hover:text-primary group-hover:translate-x-1 transition-all duration-200" />
-                </Link>
-                <Link
-                  href="/vendor-portal/catalog/breakdown"
-                  className="group flex items-center justify-between text-xs py-2 px-3 rounded-lg hover:bg-base-200 text-base-content/80 hover:text-primary transition-all duration-200 font-medium"
-                >
-                  <span className="flex items-center gap-2">
-                    <Layers className="w-3.5 h-3.5" /> Catalog Breakdown
-                  </span>
-                  <ChevronRight className="w-4 h-4 text-base-content/40 group-hover:text-primary group-hover:translate-x-1 transition-all duration-200" />
-                </Link>
-              </div>
+        const visibleGroups = shortcutGroups
+          .map((group) => ({
+            ...group,
+            items: group.items.filter((item) =>
+              item.permission ? hasPermission(item.permission) : true
+            ),
+          }))
+          .filter((group) => group.items.length > 0);
+
+        if (visibleGroups.length === 0) return null;
+
+        const gridColsClass =
+          visibleGroups.length === 3
+            ? 'md:grid-cols-3'
+            : visibleGroups.length === 2
+            ? 'md:grid-cols-2'
+            : 'md:grid-cols-1';
+
+        return (
+          <div className="space-y-4 pt-4 border-t border-base-300">
+            <h2 className="text-base font-bold text-base-content flex items-center gap-2">
+              <LayoutDashboard className="w-4 h-4 text-primary" />
+              <span>Vendor Hub Shortcuts</span>
+            </h2>
+
+            <div className={`grid grid-cols-1 ${gridColsClass} gap-5`}>
+              {visibleGroups.map((group) => {
+                const GroupIcon = group.icon;
+                return (
+                  <div
+                    key={group.title}
+                    className="card bg-base-100 border border-base-300 shadow-sm hover:shadow-md transition-shadow"
+                  >
+                    <div className="card-body p-5 flex flex-col justify-between space-y-4">
+                      <div>
+                        <div className="flex items-center gap-2 text-primary font-bold text-sm mb-1">
+                          <GroupIcon className="w-4 h-4" />
+                          <span>{group.title}</span>
+                        </div>
+                        <p className="text-xs text-base-content/60">{group.desc}</p>
+                      </div>
+                      <div className="space-y-1.5 pt-2 border-t border-base-200">
+                        {group.items.map((item) => {
+                          const ItemIcon = item.icon;
+                          return (
+                            <Link
+                              key={item.href}
+                              href={item.href}
+                              className="group flex items-center justify-between text-xs py-2 px-3 rounded-lg hover:bg-base-200 text-base-content/80 hover:text-primary transition-all duration-200 font-medium"
+                            >
+                              <span className="flex items-center gap-2">
+                                <ItemIcon className="w-3.5 h-3.5" />
+                                <span>{item.label}</span>
+                              </span>
+                              <ChevronRight className="w-4 h-4 text-base-content/40 group-hover:text-primary group-hover:translate-x-1 transition-all duration-200" />
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
-
-          {/* Insights Group */}
-          <div className="card bg-base-100 border border-base-300 shadow-sm hover:shadow-md transition-shadow">
-            <div className="card-body p-5 flex flex-col justify-between space-y-4">
-              <div>
-                <div className="flex items-center gap-2 text-primary font-bold text-sm mb-1">
-                  <BarChart3 className="w-4 h-4" />
-                  <span>Insights & Analytics</span>
-                </div>
-                <p className="text-xs text-base-content/60">
-                  Detailed sales reports, NCS contribution breakdown, and XLS export for accounting.
-                </p>
-              </div>
-              <div className="space-y-1.5 pt-2 border-t border-base-200">
-                <Link
-                  href="/vendor-portal/insights/sales-report"
-                  className="group flex items-center justify-between text-xs py-2 px-3 rounded-lg hover:bg-base-200 text-base-content/80 hover:text-primary transition-all duration-200 font-medium"
-                >
-                  <span className="flex items-center gap-2">
-                    <BarChart3 className="w-3.5 h-3.5" /> Sales Report & Breakdown
-                  </span>
-                  <ChevronRight className="w-4 h-4 text-base-content/40 group-hover:text-primary group-hover:translate-x-1 transition-all duration-200" />
-                </Link>
-                <Link
-                  href="/vendor-portal/insights/performance-report"
-                  className="group flex items-center justify-between text-xs py-2 px-3 rounded-lg hover:bg-base-200 text-base-content/80 hover:text-primary transition-all duration-200 font-medium"
-                >
-                  <span className="flex items-center gap-2">
-                    <FileSpreadsheet className="w-3.5 h-3.5" /> Performance Report (XLS)
-                  </span>
-                  <ChevronRight className="w-4 h-4 text-base-content/40 group-hover:text-primary group-hover:translate-x-1 transition-all duration-200" />
-                </Link>
-              </div>
-            </div>
-          </div>
-
-          {/* Accounting Group */}
-          <div className="card bg-base-100 border border-base-300 shadow-sm hover:shadow-md transition-shadow">
-            <div className="card-body p-5 flex flex-col justify-between space-y-4">
-              <div>
-                <div className="flex items-center gap-2 text-primary font-bold text-sm mb-1">
-                  <Receipt className="w-4 h-4" />
-                  <span>Accounting & Payouts</span>
-                </div>
-                <p className="text-xs text-base-content/60">
-                  Inspect weekly statements, verify bank details, or apply for a higher settlement class.
-                </p>
-              </div>
-              <div className="space-y-1.5 pt-2 border-t border-base-200">
-                <Link
-                  href="/vendor-portal/accounting"
-                  className="group flex items-center justify-between text-xs py-2 px-3 rounded-lg bg-primary/5 hover:bg-primary/10 text-primary transition-all duration-200 font-bold"
-                >
-                  <span className="flex items-center gap-2">
-                    <Receipt className="w-3.5 h-3.5" /> View Payout Statements
-                  </span>
-                  <ChevronRight className="w-4 h-4 text-primary group-hover:translate-x-1 transition-all duration-200" />
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+        );
+      })()}
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation';
 import { vendorApi } from '@/lib/api';
 import { Product } from '@/lib/types';
 import ProductForm from '@/components/ProductForm';
+import VendorLoader from '@/components/VendorLoader';
 
 export default function EditProductPage() {
   const params = useParams();
@@ -37,10 +38,11 @@ export default function EditProductPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 gap-3">
-        <span className="loading loading-spinner loading-lg text-primary"></span>
-        <p className="text-sm font-medium text-base-content/60">Loading product information...</p>
-      </div>
+      <VendorLoader
+        fullScreen={false}
+        label="Product Catalog Manager"
+        sublabel="Loading product specs, media and pricing tiers..."
+      />
     );
   }
 

@@ -18,6 +18,7 @@ export interface Brand {
   bank_name?: string;
   bank_account_no?: string;
   bank_account_name?: string;
+  bank_swift_code?: string;
   status: 'active' | 'inactive' | 'pending';
 }
 

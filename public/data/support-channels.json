@@ -1,0 +1,62 @@
+{
+  "whatsapp_inquiry_number": "60123456789",
+  "channels": [
+    {
+      "id": "whatsapp",
+      "title": "WhatsApp Partner Desk",
+      "description": "Direct chat with our merchant relations team for urgent fulfillment issues.",
+      "card_icon": "MessageCircle",
+      "button_text": "Chat on WhatsApp",
+      "button_icon": "MessageCircle",
+      "link": "https://wa.me/60123456789",
+      "target": "_blank"
+    },
+    {
+      "id": "email",
+      "title": "Email Support",
+      "description": "Send detailed inquiries, statements, or tier upgrade applications to our desk.",
+      "card_icon": "Mail",
+      "button_text": "Email Support Desk",
+      "button_icon": "Mail",
+      "link": "marketing@hauscosmetics.com",
+      "target": "_self"
+    },
+    {
+      "id": "operating_hours",
+      "title": "Operating Hours",
+      "description": "Monday – Friday: 9:00 AM – 6:00 PM (MYT)\nLogistics Hub operates 7 days a week.",
+      "card_icon": "Clock",
+      "button_text": "Call Hotline Desk",
+      "button_icon": "Phone",
+      "link": "https://wa.me/60123456789?text=Urgent%20Logistics%20Support",
+      "target": "_blank"
+    }
+  ],
+  "faqs": [
+    {
+      "q": "How does the weekly settlement cycle work?",
+      "a": "The settlement period runs weekly with a Sunday 11:59 PM cutoff. All completed orders within that period are calculated and disbursed directly to your registered bank account every Wednesday. You can review detailed statements and historical payout PDFs in the Accounting & Payouts section.",
+      "category": "Accounting"
+    },
+    {
+      "q": "What is the difference between Settlement Classes (Kelas A, Kelas B, Kelas C)?",
+      "a": "Settlement classes define your brand payout rate based on sales volume and tier agreement: Kelas A (45% rate), Kelas B (50% standard rate), and Kelas C (55% high-volume partner rate). If your sales consistently reach higher tiers, you can request an upgrade.",
+      "category": "Accounting"
+    },
+    {
+      "q": "How does Single Hub Logistics & Fulfillment operate?",
+      "a": "All customer shipments across all partner brands are consolidated and fulfilled centrally via the VAMOFLEX Central Logistics Hub. Once your stock is received and verified at the central warehouse, order dispatch, delivery tracking, and courier handling are fully managed by our logistics team.",
+      "category": "Logistics"
+    },
+    {
+      "q": "How do I submit or update product listings?",
+      "a": "Navigate to Catalog > Add Product to draft new SKU items. All newly submitted products undergo a quick compliance and category check before becoming live on the storefront. You can track approval states under Manage Products.",
+      "category": "Catalog"
+    },
+    {
+      "q": "How do I update my bank payout details or brand contact?",
+      "a": "For security and fraud prevention, bank account modifications require verification. Please submit an inquiry through this support portal or contact your account manager directly with supporting bank statement documentation.",
+      "category": "Account"
+    }
+  ]
+}

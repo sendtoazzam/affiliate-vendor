@@ -78,7 +78,7 @@ export default function QuickActionFab() {
       icon: Percent,
       color: 'text-success bg-success/10',
       badge: `${brandShare}% Net`,
-      permission: 'vendor.accounting.view',
+      permission: 'vendor.settlement_plan.view',
     },
     {
       label: 'Weekly Statements',
@@ -96,7 +96,7 @@ export default function QuickActionFab() {
       icon: TrendingUp,
       color: 'text-warning bg-warning/10',
       badge: 'Insights',
-      permission: 'vendor.reporting.view',
+      permission: ['vendor.insights.sales', 'vendor.insights.sales_report'],
     },
     {
       label: 'Edit Brand Profile',
@@ -105,6 +105,7 @@ export default function QuickActionFab() {
       icon: Edit,
       color: 'text-secondary bg-secondary/10',
       badge: 'Settings',
+      permission: 'vendor.profile.edit',
     },
     {
       label: 'Support & Help Desk',
@@ -113,6 +114,7 @@ export default function QuickActionFab() {
       icon: HelpCircle,
       color: 'text-base-content/70 bg-base-200',
       badge: 'Help',
+      permission: 'vendor.support.view',
     },
   ];
 
@@ -120,6 +122,10 @@ export default function QuickActionFab() {
     if (!item.permission) return true;
     return hasPermission(item.permission);
   });
+
+  if (filteredLinks.length === 0) {
+    return null;
+  }
 
   return (
     <div ref={menuRef} className="fixed bottom-6 right-6 z-40">

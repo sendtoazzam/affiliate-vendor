@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 
 export default function VendorDashboardPage() {
-  const { brand } = useAuth();
+  const { brand, hasPermission } = useAuth();
   const [data, setData] = useState<DashboardData | null>(null);
   const [reportingData, setReportingData] = useState<ReportingData | null>(null);
   const [productsList, setProductsList] = useState<any[]>([]);
@@ -332,138 +332,147 @@ export default function VendorDashboardPage() {
         </div>
       </div>
 
-      {/* Fast Action Navigation Hub */}
-      <div className="space-y-4">
-        <h2 className="text-base font-bold text-base-content flex items-center gap-2">
-          <LayoutDashboard className="w-4 h-4 text-primary" />
-          <span>Vendor Hub Shortcuts</span>
-        </h2>
+      {/* Fast Action Navigation Hub - Follows Vendor ACL */}
+      {(() => {
+        const shortcutGroups = [
+          {
+            title: 'Catalog',
+            desc: 'Manage inventory listings, create new products, and track product level velocity.',
+            icon: Package,
+            items: [
+              {
+                label: 'Manage Products',
+                href: '/vendor-portal/catalog/manage-product',
+                icon: Boxes,
+                permission: ['vendor.catalog.view', 'vendor.catalog.manage'],
+              },
+              {
+                label: 'Add New Product',
+                href: '/vendor-portal/catalog/add-product',
+                icon: PlusCircle,
+                permission: 'vendor.catalog.create',
+              },
+              {
+                label: 'NCS Leaderboard',
+                href: '/vendor-portal/catalog/performance',
+                icon: TrendingUp,
+                permission: ['vendor.catalog.performance', 'vendor.catalog.leaderboard'],
+              },
+              {
+                label: 'Catalog Breakdown',
+                href: '/vendor-portal/catalog/breakdown',
+                icon: Layers,
+                permission: 'vendor.catalog.breakdown',
+              },
+            ],
+          },
+          {
+            title: 'Insights & Analytics',
+            desc: 'Detailed sales reports, NCS contribution breakdown, and XLS export for accounting.',
+            icon: BarChart3,
+            items: [
+              {
+                label: 'Sales Report & Breakdown',
+                href: '/vendor-portal/insights/sales-report',
+                icon: BarChart3,
+                permission: ['vendor.insights.sales', 'vendor.insights.sales_report'],
+              },
+              {
+                label: 'Performance Report (XLS)',
+                href: '/vendor-portal/insights/performance-report',
+                icon: FileSpreadsheet,
+                permission: ['vendor.insights.performance', 'vendor.insights.performance_report'],
+              },
+            ],
+          },
+          {
+            title: 'Accounting & Settlements',
+            desc: 'Inspect weekly statements, verify bank details, or apply for a higher settlement class.',
+            icon: Receipt,
+            items: [
+              {
+                label: 'Payout Statements',
+                href: '/vendor-portal/accounting',
+                icon: Receipt,
+                permission: 'vendor.accounting.view',
+              },
+              {
+                label: 'Settlement Plan & Tiers',
+                href: '/vendor-portal/settlement-plan',
+                icon: Layers,
+                permission: 'vendor.settlement_plan.view',
+              },
+            ],
+          },
+        ];
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {/* Catalog Group */}
-          <div className="card bg-base-100 border border-base-300 shadow-sm hover:shadow-md transition-shadow">
-            <div className="card-body p-5 flex flex-col justify-between space-y-4">
-              <div>
-                <div className="flex items-center gap-2 text-primary font-bold text-sm mb-1">
-                  <Package className="w-4 h-4" />
-                  <span>Catalog</span>
-                </div>
-                <p className="text-xs text-base-content/60">
-                  Manage inventory listings, create new products, and track product level velocity.
-                </p>
-              </div>
-              <div className="space-y-1.5 pt-2 border-t border-base-200">
-                <Link
-                  href="/vendor-portal/catalog/manage-product"
-                  className="group flex items-center justify-between text-xs py-2 px-3 rounded-lg hover:bg-base-200 text-base-content/80 hover:text-primary transition-all duration-200 font-medium"
-                >
-                  <span className="flex items-center gap-2">
-                    <Boxes className="w-3.5 h-3.5" /> Manage Products
-                  </span>
-                  <ChevronRight className="w-4 h-4 text-base-content/40 group-hover:text-primary group-hover:translate-x-1 transition-all duration-200" />
-                </Link>
-                <Link
-                  href="/vendor-portal/catalog/add-product"
-                  className="group flex items-center justify-between text-xs py-2 px-3 rounded-lg hover:bg-base-200 text-base-content/80 hover:text-primary transition-all duration-200 font-medium"
-                >
-                  <span className="flex items-center gap-2">
-                    <PlusCircle className="w-3.5 h-3.5" /> Add New Product
-                  </span>
-                  <ChevronRight className="w-4 h-4 text-base-content/40 group-hover:text-primary group-hover:translate-x-1 transition-all duration-200" />
-                </Link>
-                <Link
-                  href="/vendor-portal/catalog/performance"
-                  className="group flex items-center justify-between text-xs py-2 px-3 rounded-lg hover:bg-base-200 text-base-content/80 hover:text-primary transition-all duration-200 font-medium"
-                >
-                  <span className="flex items-center gap-2">
-                    <TrendingUp className="w-3.5 h-3.5" /> NCS Leaderboard
-                  </span>
-                  <ChevronRight className="w-4 h-4 text-base-content/40 group-hover:text-primary group-hover:translate-x-1 transition-all duration-200" />
-                </Link>
-                <Link
-                  href="/vendor-portal/catalog/breakdown"
-                  className="group flex items-center justify-between text-xs py-2 px-3 rounded-lg hover:bg-base-200 text-base-content/80 hover:text-primary transition-all duration-200 font-medium"
-                >
-                  <span className="flex items-center gap-2">
-                    <Layers className="w-3.5 h-3.5" /> Catalog Breakdown
-                  </span>
-                  <ChevronRight className="w-4 h-4 text-base-content/40 group-hover:text-primary group-hover:translate-x-1 transition-all duration-200" />
-                </Link>
-              </div>
+        const visibleGroups = shortcutGroups
+          .map((group) => ({
+            ...group,
+            items: group.items.filter((item) =>
+              item.permission ? hasPermission(item.permission) : true
+            ),
+          }))
+          .filter((group) => group.items.length > 0);
+
+        if (visibleGroups.length === 0) return null;
+
+        const gridColsClass =
+          visibleGroups.length === 3
+            ? 'md:grid-cols-3'
+            : visibleGroups.length === 2
+            ? 'md:grid-cols-2'
+            : 'md:grid-cols-1';
+
+        return (
+          <div className="space-y-4">
+            <h2 className="text-base font-bold text-base-content flex items-center gap-2">
+              <LayoutDashboard className="w-4 h-4 text-primary" />
+              <span>Vendor Hub Shortcuts</span>
+            </h2>
+
+            <div className={`grid grid-cols-1 ${gridColsClass} gap-5`}>
+              {visibleGroups.map((group) => {
+                const GroupIcon = group.icon;
+                return (
+                  <div
+                    key={group.title}
+                    className="card bg-base-100 border border-base-300 shadow-sm hover:shadow-md transition-shadow"
+                  >
+                    <div className="card-body p-5 flex flex-col justify-between space-y-4">
+                      <div>
+                        <div className="flex items-center gap-2 text-primary font-bold text-sm mb-1">
+                          <GroupIcon className="w-4 h-4" />
+                          <span>{group.title}</span>
+                        </div>
+                        <p className="text-xs text-base-content/60">{group.desc}</p>
+                      </div>
+                      <div className="space-y-1.5 pt-2 border-t border-base-200">
+                        {group.items.map((item) => {
+                          const ItemIcon = item.icon;
+                          return (
+                            <Link
+                              key={item.href}
+                              href={item.href}
+                              className="group flex items-center justify-between text-xs py-2 px-3 rounded-lg hover:bg-base-200 text-base-content/80 hover:text-primary transition-all duration-200 font-medium"
+                            >
+                              <span className="flex items-center gap-2">
+                                <ItemIcon className="w-3.5 h-3.5" />
+                                <span>{item.label}</span>
+                              </span>
+                              <ChevronRight className="w-4 h-4 text-base-content/40 group-hover:text-primary group-hover:translate-x-1 transition-all duration-200" />
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
-
-          {/* Insights Group */}
-          <div className="card bg-base-100 border border-base-300 shadow-sm hover:shadow-md transition-shadow">
-            <div className="card-body p-5 flex flex-col justify-between space-y-4">
-              <div>
-                <div className="flex items-center gap-2 text-primary font-bold text-sm mb-1">
-                  <BarChart3 className="w-4 h-4" />
-                  <span>Insights & Analytics</span>
-                </div>
-                <p className="text-xs text-base-content/60">
-                  Detailed sales reports, NCS contribution breakdown, and XLS export for accounting.
-                </p>
-              </div>
-              <div className="space-y-1.5 pt-2 border-t border-base-200">
-                <Link
-                  href="/vendor-portal/insights/sales-report"
-                  className="group flex items-center justify-between text-xs py-2 px-3 rounded-lg hover:bg-base-200 text-base-content/80 hover:text-primary transition-all duration-200 font-medium"
-                >
-                  <span className="flex items-center gap-2">
-                    <BarChart3 className="w-3.5 h-3.5" /> Sales Report & Breakdown
-                  </span>
-                  <ChevronRight className="w-4 h-4 text-base-content/40 group-hover:text-primary group-hover:translate-x-1 transition-all duration-200" />
-                </Link>
-                <Link
-                  href="/vendor-portal/insights/performance-report"
-                  className="group flex items-center justify-between text-xs py-2 px-3 rounded-lg hover:bg-base-200 text-base-content/80 hover:text-primary transition-all duration-200 font-medium"
-                >
-                  <span className="flex items-center gap-2">
-                    <FileSpreadsheet className="w-3.5 h-3.5" /> Performance Report (XLS)
-                  </span>
-                  <ChevronRight className="w-4 h-4 text-base-content/40 group-hover:text-primary group-hover:translate-x-1 transition-all duration-200" />
-                </Link>
-              </div>
-            </div>
-          </div>
-
-          {/* Accounting Group */}
-          <div className="card bg-base-100 border border-base-300 shadow-sm hover:shadow-md transition-shadow">
-            <div className="card-body p-5 flex flex-col justify-between space-y-4">
-              <div>
-                <div className="flex items-center gap-2 text-primary font-bold text-sm mb-1">
-                  <Receipt className="w-4 h-4" />
-                  <span>Accounting & Settlements</span>
-                </div>
-                <p className="text-xs text-base-content/60">
-                  Inspect weekly statements, verify bank details, or apply for a higher settlement class.
-                </p>
-              </div>
-              <div className="space-y-1.5 pt-2 border-t border-base-200">
-                <Link
-                  href="/vendor-portal/accounting"
-                  className="group flex items-center justify-between text-xs py-2 px-3 rounded-lg hover:bg-base-200 text-base-content/80 hover:text-primary transition-all duration-200 font-medium"
-                >
-                  <span className="flex items-center gap-2">
-                    <Receipt className="w-3.5 h-3.5" /> Payout Statements
-                  </span>
-                  <ChevronRight className="w-4 h-4 text-base-content/40 group-hover:text-primary group-hover:translate-x-1 transition-all duration-200" />
-                </Link>
-                <Link
-                  href="/vendor-portal/settlement-plan"
-                  className="group flex items-center justify-between text-xs py-2 px-3 rounded-lg hover:bg-base-200 text-base-content/80 hover:text-primary transition-all duration-200 font-medium"
-                >
-                  <span className="flex items-center gap-2">
-                    <Layers className="w-3.5 h-3.5" /> Settlement Plan & Tiers
-                  </span>
-                  <ChevronRight className="w-4 h-4 text-base-content/40 group-hover:text-primary group-hover:translate-x-1 transition-all duration-200" />
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+        );
+      })()}
 
       {/* Transparent Settlement Explainer Card */}
       <div className="card bg-base-100 border border-base-300 shadow-sm">
