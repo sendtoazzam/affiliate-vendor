@@ -18,6 +18,8 @@ import {
   Sparkles
 } from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from '@/lib/auth-context';
+import { ShieldAlert } from 'lucide-react';
 
 interface ProductFormProps {
   initialData?: Partial<Product>;
@@ -26,6 +28,7 @@ interface ProductFormProps {
 
 export default function ProductForm({ initialData, isEditing = false }: ProductFormProps) {
   const router = useRouter();
+  const { hasPermission } = useAuth();
 
   const [name, setName] = useState(initialData?.name || '');
   const [slug, setSlug] = useState(initialData?.slug || '');
@@ -150,6 +153,31 @@ export default function ProductForm({ initialData, isEditing = false }: ProductF
       setLoading(false);
     }
   };
+
+  const requiredPerm = isEditing ? ['vendor.catalog.edit', 'vendor.catalog.manage'] : 'vendor.catalog.create';
+  if (!hasPermission(requiredPerm)) {
+    return (
+      <div className="card bg-base-100 border border-base-300 shadow-sm p-8 text-center max-w-lg mx-auto my-12 rounded-2xl">
+        <div className="w-14 h-14 bg-error/10 text-error rounded-full flex items-center justify-center mx-auto mb-4">
+          <ShieldAlert className="w-7 h-7" />
+        </div>
+        <h2 className="text-xl font-bold text-base-content mb-2">Access Restricted</h2>
+        <p className="text-sm text-base-content/70 mb-6 leading-relaxed">
+          {isEditing
+            ? 'You do not have permission to edit product details. Please contact your marketplace administrator to request catalog edit permissions.'
+            : 'You do not have permission to add new products to the catalog. Please contact your marketplace administrator to request catalog creation permissions.'}
+        </p>
+        <div className="flex justify-center">
+          <Link
+            href="/vendor-portal/catalog/manage-product"
+            className="btn btn-primary btn-sm text-white px-6"
+          >
+            Return to Products
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">

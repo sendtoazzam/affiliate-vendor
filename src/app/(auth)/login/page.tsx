@@ -114,7 +114,8 @@ export default function LoginPage() {
       );
       setIsFirstTime(isFirstTimeLogin);
 
-      login(token, user, brand);
+      const userPermissions = user?.permissions || response?.permissions || [];
+      login(token, user, brand, userPermissions);
       setLoggedInBrand(brand?.name || user?.brand_name || null);
       setLoggedInUser(user?.name || user?.username || null);
       setIsPreparing(true);

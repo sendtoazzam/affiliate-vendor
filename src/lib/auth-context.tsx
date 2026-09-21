@@ -216,7 +216,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     const verifyAuthToken = async () => {
       try {
-        await vendorApi.verifyToken();
+        await refreshBrand();
       } catch (err: any) {
         if (err.response?.status === 401) {
           triggerSessionExpired();
@@ -340,13 +340,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         return true;
       }
 
-      // Wildcard check
-      if (permissions.includes("*")) {
-        return true;
+      // No permissions array loaded yet or empty
+      if (!permissions || !Array.isArray(permissions) || permissions.length === 0) {
+        return false;
       }
 
-      // If user has no permissions array yet (e.g. before initial sync), fallback to true to prevent locking out
-      if (!permissions || permissions.length === 0) {
+      // Wildcard check
+      if (permissions.includes("*")) {
         return true;
       }
 
