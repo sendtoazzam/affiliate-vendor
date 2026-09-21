@@ -1,0 +1,60 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # Prevent directory listing
+    <IfModule mod_autoindex.c>
+        Options -Indexes
+    </IfModule>
+
+    # Dynamic product edit routes rewrite to client-side static page
+    RewriteRule ^vendor-portal/catalog/[^/]+/edit/?$ vendor-portal/catalog/edit/index.html [L,QSA]
+    RewriteRule ^vendor-portal/products/[^/]+/edit/?$ vendor-portal/products/edit/index.html [L,QSA]
+
+    # Serve existing files and directories directly
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Check if request has an index.html file in the matching directory
+    RewriteCond %{DOCUMENT_ROOT}/$1/index.html -f
+    RewriteRule ^(.*)/$ $1/index.html [L]
+
+    # Check if request without extension has a corresponding .html file
+    RewriteCond %{DOCUMENT_ROOT}/$1.html -f
+    RewriteRule ^(.*)$ $1.html [L]
+
+    # SPA routing fallback: send to index.html
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.html [L]
+</IfModule>
+
+# Cache-Control & Performance Headers
+<IfModule mod_headers.c>
+    # Static hashed assets (_next/static, images, fonts) - cache 1 year
+    <FilesMatch "\.(js|css|woff|woff2|ttf|eot|png|jpg|jpeg|gif|svg|ico|webp)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+
+    # Dynamic JSON data and HTML files - no cache to ensure live updates
+    <FilesMatch "\.(html|json|txt)$">
+        Header set Cache-Control "no-cache, no-store, must-revalidate"
+        Header set Pragma "no-cache"
+        Header set Expires "0"
+    </FilesMatch>
+
+    # Security Headers
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# Gzip / Deflate Compression
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/x-javascript application/json application/xml application/rss+xml font/truetype font/opentype application/vnd.ms-fontobject image/svg+xml
+</IfModule>
+
+# Error Document
+ErrorDocument 404 /404.html
