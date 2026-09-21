@@ -84,15 +84,13 @@ export default function SettlementPlanPage() {
     hasPermission('vendor.settlement_plan.apply');
 
   const getClassName = (cls?: string) => {
-    switch (cls) {
-      case 'kelas_a':
-        return 'Kelas A (45% Brand Share)';
-      case 'kelas_c':
-        return 'Kelas C (55% Brand Share)';
-      case 'kelas_b':
-      default:
-        return 'Kelas B (50% Brand Share)';
+    if (!cls) return 'Kelas B (50% Brand Share)';
+    const found = plans.find((p) => p.id === cls);
+    if (found) {
+      return `${found.name} (${found.brandShare}% Brand Share)`;
     }
+    const raw = cls.replace('kelas_', '').toUpperCase();
+    return `Kelas ${raw}`;
   };
 
   const formatDate = (dateStr?: string) => {
@@ -186,7 +184,7 @@ export default function SettlementPlanPage() {
     }).format(val || 0);
   };
 
-  const plans = [
+  const defaultPlans = [
     {
       id: 'kelas_a',
       name: 'Kelas A',
@@ -217,7 +215,59 @@ export default function SettlementPlanPage() {
         'Higher direct brand margin with solid core affiliate commission rewards.',
       isRecommended: false,
     },
+    {
+      id: 'kelas_d',
+      name: 'Kelas D',
+      brandShare: 60,
+      bonusFund: 25,
+      platformFee: 15,
+      description:
+        'High brand net margin tier with 25% allocated to high-performer bonus rewards.',
+      isRecommended: false,
+    },
+    {
+      id: 'kelas_e',
+      name: 'Kelas E',
+      brandShare: 65,
+      bonusFund: 20,
+      platformFee: 15,
+      description:
+        'Optimized for brands with strict unit costs while preserving standard 15% platform fee.',
+      isRecommended: false,
+    },
+    {
+      id: 'kelas_f',
+      name: 'Kelas F',
+      brandShare: 70,
+      bonusFund: 15,
+      platformFee: 15,
+      description:
+        'Maximum 70% direct brand retention tier with 15% core affiliate bonus pool.',
+      isRecommended: false,
+    },
   ];
+
+  const availableClasses = (brand as any)?.available_classes || (brand as any)?.class_rates;
+
+  const plans = React.useMemo(() => {
+    if (availableClasses && typeof availableClasses === 'object' && Object.keys(availableClasses).length > 0) {
+      return Object.entries(availableClasses).map(([code, details]: [string, any]) => {
+        const brandShare = Number(details.brand_share || details.brand_share_percentage || 50);
+        const bonusFund = Number(details.bonus_fund || details.bonus_fund_percentage || 35);
+        const platformFee = Number(details.vfx_fee || details.vfx_platform_fee_percentage || 15);
+        return {
+          id: code,
+          name: details.name || `Kelas ${code.replace('kelas_', '').toUpperCase()}`,
+          brandShare,
+          bonusFund,
+          platformFee,
+          description: details.description || `${brandShare}% Brand terima · Bonus sehingga ${bonusFund}%`,
+          isRecommended: Boolean(details.is_recommended || code === 'kelas_b'),
+        };
+      });
+    }
+    return defaultPlans;
+  }, [availableClasses]);
 
   return (
     <div className="space-y-8 w-full max-w-7xl pb-12">
@@ -599,15 +649,11 @@ export default function SettlementPlanPage() {
                   disabled={hasPendingRequest}
                   onChange={(e) => setRequestedClass(e.target.value as SettlementClass)}
                 >
-                  <option value="kelas_a">
-                    Kelas A (45% Brand | 40% Bonus | 15% Platform)
-                  </option>
-                  <option value="kelas_b">
-                    Kelas B (50% Brand | 35% Bonus | 15% Platform) - Recommended
-                  </option>
-                  <option value="kelas_c">
-                    Kelas C (55% Brand | 30% Bonus | 15% Platform)
-                  </option>
+                  {plans.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} ({p.brandShare}% Brand | {p.bonusFund}% Bonus | {p.platformFee}% Platform){p.isRecommended ? ' - Recommended' : ''}
+                    </option>
+                  ))}
                 </select>
               </div>
 

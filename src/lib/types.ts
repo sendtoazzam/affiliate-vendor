@@ -1,4 +1,11 @@
-export type SettlementClass = 'kelas_a' | 'kelas_b' | 'kelas_c';
+export type SettlementClass =
+  | 'kelas_a'
+  | 'kelas_b'
+  | 'kelas_c'
+  | 'kelas_d'
+  | 'kelas_e'
+  | 'kelas_f'
+  | string;
 
 export interface Brand {
   id: string;
