@@ -49,68 +49,48 @@ export default function ProductSalesLineChart({
   };
 
   const chartData = useMemo(() => {
-    if (selectedRange === 'now') {
-      // Intra-day live timeline points
-      const todayTotalGmv = timeline.reduce(
-        (sum, t) => sum + Number(t.gross_revenue ?? t.gross_sales ?? 0),
-        0,
-      );
-      const todayTotalNcs = timeline.reduce(
-        (sum, t) => sum + Number(t.settled_ncs ?? (t.gross_revenue ?? 0) * 0.85),
-        0,
-      );
-      const todayTotalUnits = timeline.reduce((sum, t) => sum + Number(t.units_sold ?? 0), 0);
-
-      const hours = ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', 'Now'];
-      const currentHour = new Date().getHours();
-
-      return hours.map((hr, idx) => {
-        const factor = (idx + 1) / hours.length;
-        const gmv = Math.round(todayTotalGmv * factor * 100) / 100;
-        const ncs = Math.round(todayTotalNcs * factor * 100) / 100;
-        const payout = Math.round(ncs * (brandSharePct / 100) * 100) / 100;
-        const units = Math.round(todayTotalUnits * factor);
-
+    if (timeline && timeline.length > 0) {
+      return timeline.map((pt) => {
+        const gmv = Number(pt.gross_revenue ?? pt.gross_sales ?? 0);
+        const ncs = Number(pt.settled_ncs ?? gmv * 0.85);
+        const payout = Number(pt.brand_payout ?? ncs * (brandSharePct / 100));
         return {
-          date: hr,
+          date: pt.date,
           gross_revenue: gmv,
           settled_ncs: ncs,
           brand_payout: payout,
-          units_sold: units,
-          orders_count: Math.ceil(units * 0.8),
+          units_sold: Number(pt.units_sold ?? 0),
+          orders_count: Number(pt.orders_count ?? 0),
         };
       });
     }
 
-    if (!timeline || timeline.length === 0) {
-      // Generate standard fallback 7 days data for clean presentation if empty
-      const today = new Date();
-      return Array.from({ length: 7 }, (_, i) => {
-        const d = new Date(today);
-        d.setDate(d.getDate() - (6 - i));
-        const dateStr = d.toISOString().split('T')[0];
-        return {
-          date: dateStr,
-          gross_revenue: 0,
-          settled_ncs: 0,
-          brand_payout: 0,
-          units_sold: 0,
-          orders_count: 0,
-        };
-      });
+    // When timeline has no orders/sales in selected range, generate clean zero-value points for timeline axes
+    if (selectedRange === 'now') {
+      const hours = ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', 'Now'];
+      return hours.map((hr) => ({
+        date: hr,
+        gross_revenue: 0,
+        settled_ncs: 0,
+        brand_payout: 0,
+        units_sold: 0,
+        orders_count: 0,
+      }));
     }
 
-    return timeline.map((pt) => {
-      const gmv = Number(pt.gross_revenue ?? pt.gross_sales ?? 0);
-      const ncs = Number(pt.settled_ncs ?? gmv * 0.85);
-      const payout = Number(pt.brand_payout ?? ncs * (brandSharePct / 100));
+    const daysCount = selectedRange === '30d' ? 30 : selectedRange === 'month' ? 14 : 7;
+    const today = new Date();
+    return Array.from({ length: daysCount }, (_, i) => {
+      const d = new Date(today);
+      d.setDate(d.getDate() - (daysCount - 1 - i));
+      const dateStr = d.toISOString().split('T')[0];
       return {
-        date: pt.date,
-        gross_revenue: gmv,
-        settled_ncs: ncs,
-        brand_payout: payout,
-        units_sold: Number(pt.units_sold ?? 0),
-        orders_count: Number(pt.orders_count ?? 0),
+        date: dateStr,
+        gross_revenue: 0,
+        settled_ncs: 0,
+        brand_payout: 0,
+        units_sold: 0,
+        orders_count: 0,
       };
     });
   }, [timeline, brandSharePct, selectedRange]);

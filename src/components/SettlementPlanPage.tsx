@@ -36,11 +36,15 @@ export default function SettlementPlanPage() {
   const [changeError, setChangeError] = useState<string | null>(null);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
+  const [apiAvailableClasses, setApiAvailableClasses] = useState<any | null>(null);
 
   const fetchClassChangeStatus = async () => {
     try {
       setLoadingChange(true);
       const res = await vendorApi.getClassChangeStatus();
+      if (res.available_classes && typeof res.available_classes === 'object') {
+        setApiAvailableClasses(res.available_classes);
+      }
       const historyList = res.history || res.data || [];
       const historyArr = Array.isArray(historyList) ? historyList : [];
 
@@ -247,27 +251,40 @@ export default function SettlementPlanPage() {
     },
   ];
 
-  const availableClasses = (brand as any)?.available_classes || (brand as any)?.class_rates;
-
   const plans = React.useMemo(() => {
-    if (availableClasses && typeof availableClasses === 'object' && Object.keys(availableClasses).length > 0) {
-      return Object.entries(availableClasses).map(([code, details]: [string, any]) => {
-        const brandShare = Number(details.brand_share || details.brand_share_percentage || 50);
-        const bonusFund = Number(details.bonus_fund || details.bonus_fund_percentage || 35);
-        const platformFee = Number(details.vfx_fee || details.vfx_platform_fee_percentage || 15);
-        return {
-          id: code,
-          name: details.name || `Kelas ${code.replace('kelas_', '').toUpperCase()}`,
-          brandShare,
-          bonusFund,
-          platformFee,
-          description: details.description || `${brandShare}% Brand terima · Bonus sehingga ${bonusFund}%`,
-          isRecommended: Boolean(details.is_recommended || code === 'kelas_b'),
-        };
-      });
+    const rawAvailable = apiAvailableClasses || (brand as any)?.available_classes;
+    if (rawAvailable && typeof rawAvailable === 'object') {
+      const validEntries = Object.entries(rawAvailable).filter(
+        ([code, details]: [string, any]) =>
+          typeof details === 'object' &&
+          details !== null &&
+          !Array.isArray(details) &&
+          (details.brand_share !== undefined ||
+            details.brand_share_percentage !== undefined ||
+            code.startsWith('kelas_'))
+      );
+
+      if (validEntries.length > 0) {
+        return validEntries.map(([code, details]: [string, any]) => {
+          const brandShare = Number(details.brand_share ?? details.brand_share_percentage ?? 50);
+          const bonusFund = Number(details.bonus_fund ?? details.bonus_fund_percentage ?? 35);
+          const platformFee = Number(details.vfx_fee ?? details.vfx_platform_fee_percentage ?? 15);
+          return {
+            id: details.code || details.class_code || code,
+            name: details.name || `Kelas ${code.replace('kelas_', '').toUpperCase()}`,
+            brandShare,
+            bonusFund,
+            platformFee,
+            description:
+              details.description ||
+              `${brandShare}% Brand terima · Bonus sehingga ${bonusFund}%`,
+            isRecommended: Boolean(details.is_recommended || code === 'kelas_b'),
+          };
+        });
+      }
     }
     return defaultPlans;
-  }, [availableClasses]);
+  }, [apiAvailableClasses, brand]);
 
   return (
     <div className="space-y-8 w-full max-w-7xl pb-12">

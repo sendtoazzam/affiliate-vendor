@@ -70,13 +70,7 @@ export default function ProductStockBalanceBarChart({
         sold: Number(tp.units_sold || 0),
       }));
     } else {
-      // Fallback placeholder items for clean presentation
-      items = [
-        { id: 1, name: 'Highland Arabica Beans 500g', sku: 'RIMBA-COF-01', stock: 120, sold: 45 },
-        { id: 2, name: 'Cold Brew Concentrate 1L', sku: 'RIMBA-COF-02', stock: 48, sold: 82 },
-        { id: 3, name: 'Artisan Drip Bag Box (10s)', sku: 'RIMBA-COF-03', stock: 15, sold: 64 },
-        { id: 4, name: 'Espresso Roast Blend 250g', sku: 'RIMBA-COF-04', stock: 85, sold: 30 },
-      ];
+      items = [];
     }
 
     // Sort by most activity (sold + stock)
@@ -151,76 +145,97 @@ export default function ProductStockBalanceBarChart({
       </div>
 
       {/* Bar List (Scrollable inner content) */}
-      <div className="p-4 sm:p-5 flex-1 overflow-y-auto space-y-3.5 relative min-h-0 divide-y divide-base-200/50">
+      <div className="p-4 sm:p-5 flex-1 overflow-y-auto space-y-3.5 relative min-h-0 divide-y divide-base-200/50 flex flex-col">
         {loading && (
           <div className="absolute inset-0 bg-base-100/70 backdrop-blur-[2px] z-20 flex items-center justify-center">
             <span className="loading loading-spinner loading-md text-primary" />
           </div>
         )}
 
-        {combinedList.map((item, idx) => {
-          const stockPct = Math.min(100, Math.max(6, (item.stock / maxScale) * 100));
-          const soldPct = Math.min(100, Math.max(6, (item.sold / maxScale) * 100));
-
-          return (
-            <div key={item.id} className={`space-y-1.5 ${idx > 0 ? 'pt-3' : ''}`}>
-              {/* Product Title & Stock Status Badge */}
-              <div className="flex items-center justify-between gap-2 text-xs">
-                <span
-                  className="font-semibold text-base-content truncate max-w-[160px] sm:max-w-[200px]"
-                  title={item.name}
-                >
-                  {{ ...item }.name}
-                </span>
-
-                {item.stock === 0 ? (
-                  <span className="badge badge-error badge-xs font-bold text-[9px] text-white shrink-0">
-                    Out of Stock
-                  </span>
-                ) : item.stock < 10 ? (
-                  <span className="badge badge-warning badge-xs font-bold text-[9px] shrink-0">
-                    Low ({item.stock})
-                  </span>
-                ) : (
-                  <span className="badge badge-ghost badge-xs font-medium text-[9px] text-base-content/60 shrink-0">
-                    {item.stock} in stock
-                  </span>
-                )}
-              </div>
-
-              {/* Comparative Double Bars */}
-              <div className="space-y-1 bg-base-200/50 p-2 rounded-xl border border-base-300/40">
-                {/* Stock Bar */}
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-base-content/50 w-8 font-mono">STK</span>
-                  <div className="flex-1 h-3 bg-base-300/50 rounded-full overflow-hidden flex">
-                    <div
-                      className="h-full bg-primary rounded-full transition-all duration-500 ease-out"
-                      style={{ width: `${stockPct}%` }}
-                    />
-                  </div>
-                  <span className="text-[11px] font-bold text-primary font-mono w-7 text-right">
-                    {item.stock}
-                  </span>
-                </div>
-
-                {/* Sold Bar */}
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-base-content/50 w-8 font-mono">SLD</span>
-                  <div className="flex-1 h-3 bg-base-300/50 rounded-full overflow-hidden flex">
-                    <div
-                      className="h-full bg-success rounded-full transition-all duration-500 ease-out"
-                      style={{ width: `${soldPct}%` }}
-                    />
-                  </div>
-                  <span className="text-[11px] font-bold text-success font-mono w-7 text-right">
-                    {item.sold}
-                  </span>
-                </div>
-              </div>
+        {combinedList.length === 0 && !loading ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-center p-4 my-auto space-y-3">
+            <div className="w-12 h-12 rounded-2xl bg-base-200/70 flex items-center justify-center text-base-content/40">
+              <Boxes className="w-6 h-6" />
             </div>
-          );
-        })}
+            <div className="space-y-1">
+              <p className="font-bold text-sm text-base-content">No Products in Inventory</p>
+              <p className="text-xs text-base-content/50 max-w-[220px]">
+                Add products to your catalog to track real-time stock and sales velocity.
+              </p>
+            </div>
+            <Link
+              href="/vendor-portal/catalog/add-product"
+              className="btn btn-primary btn-xs gap-1.5 font-semibold"
+            >
+              <Package className="w-3.5 h-3.5" />
+              <span>Add Product</span>
+            </Link>
+          </div>
+        ) : (
+          combinedList.map((item, idx) => {
+            const stockPct = Math.min(100, Math.max(6, (item.stock / maxScale) * 100));
+            const soldPct = Math.min(100, Math.max(6, (item.sold / maxScale) * 100));
+
+            return (
+              <div key={item.id} className={`space-y-1.5 ${idx > 0 ? 'pt-3' : ''}`}>
+                {/* Product Title & Stock Status Badge */}
+                <div className="flex items-center justify-between gap-2 text-xs">
+                  <span
+                    className="font-semibold text-base-content truncate max-w-[160px] sm:max-w-[200px]"
+                    title={item.name}
+                  >
+                    {{ ...item }.name}
+                  </span>
+
+                  {item.stock === 0 ? (
+                    <span className="badge badge-error badge-xs font-bold text-[9px] text-white shrink-0">
+                      Out of Stock
+                    </span>
+                  ) : item.stock < 10 ? (
+                    <span className="badge badge-warning badge-xs font-bold text-[9px] shrink-0">
+                      Low ({item.stock})
+                    </span>
+                  ) : (
+                    <span className="badge badge-ghost badge-xs font-medium text-[9px] text-base-content/60 shrink-0">
+                      {item.stock} in stock
+                    </span>
+                  )}
+                </div>
+
+                {/* Comparative Double Bars */}
+                <div className="space-y-1 bg-base-200/50 p-2 rounded-xl border border-base-300/40">
+                  {/* Stock Bar */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-base-content/50 w-8 font-mono">STK</span>
+                    <div className="flex-1 h-3 bg-base-300/50 rounded-full overflow-hidden flex">
+                      <div
+                        className="h-full bg-primary rounded-full transition-all duration-500 ease-out"
+                        style={{ width: `${stockPct}%` }}
+                      />
+                    </div>
+                    <span className="text-[11px] font-bold text-primary font-mono w-7 text-right">
+                      {item.stock}
+                    </span>
+                  </div>
+
+                  {/* Sold Bar */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-base-content/50 w-8 font-mono">SLD</span>
+                    <div className="flex-1 h-3 bg-base-300/50 rounded-full overflow-hidden flex">
+                      <div
+                        className="h-full bg-success rounded-full transition-all duration-500 ease-out"
+                        style={{ width: `${soldPct}%` }}
+                      />
+                    </div>
+                    <span className="text-[11px] font-bold text-success font-mono w-7 text-right">
+                      {item.sold}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
 
       {/* Bottom Catalog Action (Pinned) */}

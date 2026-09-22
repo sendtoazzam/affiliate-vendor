@@ -94,8 +94,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       const data = await vendorApi.getProfile();
       if (data.brand) {
-        setBrand(data.brand);
-        localStorage.setItem("vf_vendor_brand", JSON.stringify(data.brand));
+        const brandWithClasses = {
+          ...data.brand,
+          available_classes: data.available_classes || data.brand.available_classes || null,
+        };
+        setBrand(brandWithClasses);
+        localStorage.setItem("vf_vendor_brand", JSON.stringify(brandWithClasses));
       }
       if (data.user) {
         setUser(data.user);
