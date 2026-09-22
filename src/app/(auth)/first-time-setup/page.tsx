@@ -181,8 +181,9 @@ export default function FirstTimeSetupPage() {
   const userEmail = user?.email || "your registered email";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-base-200 via-base-100 to-base-300 flex items-center justify-center p-4 sm:p-6">
-      <div className="card w-full max-w-xl bg-base-100 shadow-2xl border border-base-300 overflow-hidden">
+    <div className="w-full max-w-xl py-4 sm:py-8">
+      <div className="card w-full bg-base-100/95 backdrop-blur-xl shadow-2xl border border-base-300/80 rounded-3xl overflow-hidden relative">
+        <div className="h-1.5 w-full bg-gradient-to-r from-primary via-secondary to-accent" />
         {/* Top Header Banner */}
         <div className="bg-primary/10 border-b border-primary/20 px-8 py-6 text-center relative">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary text-primary-content shadow-lg shadow-primary/30 mb-3">

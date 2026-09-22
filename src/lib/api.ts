@@ -47,6 +47,45 @@ export const vendorApi = {
     return response.data;
   },
 
+  registerVendor: async (payload: any) => {
+    const response = await apiClient.post("/v1/public/vendor/register", payload);
+    return response.data;
+  },
+
+  getSettlementClasses: async () => {
+    try {
+      const response = await apiClient.get("/v1/public/vendor/classes");
+      return response.data?.data || response.data;
+    } catch {
+      return null;
+    }
+  },
+
+  checkUsername: async (username: string) => {
+    const response = await apiClient.post("/v1/auth/check-username", { username });
+    return response.data;
+  },
+
+  checkPhone: async (phone: string) => {
+    const response = await apiClient.post("/v1/auth/check-phone", { phone });
+    return response.data;
+  },
+
+  checkEmail: async (email: string) => {
+    const response = await apiClient.post("/v1/auth/check-email", { email });
+    return response.data;
+  },
+
+  uploadVendorMedia: async (file: File, folder: string = "vendor_documents") => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("folder", folder);
+    const response = await apiClient.post("/v1/public/vendor/upload", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return response.data;
+  },
+
   sendFirstTimeOtp: async () => {
     const response = await apiClient.post("/v1/vendor/portal/first-time-setup/send-otp");
     return response.data;
