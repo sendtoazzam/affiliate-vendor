@@ -24,10 +24,13 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (typeof window !== "undefined" && error.response?.status === 401) {
-      localStorage.removeItem("vf_vendor_token");
-      localStorage.removeItem("vf_vendor_user");
-      localStorage.removeItem("vf_vendor_brand");
-      window.dispatchEvent(new CustomEvent("vf:session-expired"));
+      const isAuthUrl = error.config?.url?.includes("/auth/login") || error.config?.url?.includes("/auth/admin/login");
+      if (!isAuthUrl) {
+        localStorage.removeItem("vf_vendor_token");
+        localStorage.removeItem("vf_vendor_user");
+        localStorage.removeItem("vf_vendor_brand");
+        window.dispatchEvent(new CustomEvent("vf:session-expired"));
+      }
     }
     return Promise.reject(error);
   },

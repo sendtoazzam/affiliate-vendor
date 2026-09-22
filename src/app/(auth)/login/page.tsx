@@ -120,12 +120,12 @@ export default function LoginPage() {
       setLoggedInUser(user?.name || user?.username || null);
       setIsPreparing(true);
     } catch (err: any) {
-      console.error("Login error:", err);
       if (err.response?.status === 503 || err.response?.data?.code === "maintenance") {
         await checkMaintenance(false);
       }
+      const apiMsg = err.response?.data?.message || err.response?.data?.error;
       setError(
-        err.response?.data?.message ||
+        apiMsg ||
           err.message ||
           "Failed to log in. Please check your credentials.",
       );

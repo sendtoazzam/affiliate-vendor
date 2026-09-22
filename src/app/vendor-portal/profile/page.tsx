@@ -17,12 +17,17 @@ import {
   Calendar,
   Lock,
   Edit,
+  Store,
+  Copy,
+  ExternalLink,
+  Check,
 } from 'lucide-react';
 
 export default function VendorProfilePage() {
   const { user, brand, refreshBrand, vendorConfig } = useAuth();
   const [profileData, setProfileData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [copiedLink, setCopiedLink] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -110,6 +115,49 @@ export default function VendorProfilePage() {
               </div>
 
               <div className="divider my-4"></div>
+
+              {/* Dedicated Storefront Quick Share */}
+              {activeBrand?.slug && (
+                <div className="w-full bg-base-200/70 p-3 rounded-xl border border-base-300/60 text-left space-y-2 mb-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-base-content flex items-center gap-1.5">
+                      <Store className="w-3.5 h-3.5 text-primary" />
+                      <span>Kedai Rasmi Jenama</span>
+                    </span>
+                    <span className="badge badge-primary badge-xs">Zero Distraction</span>
+                  </div>
+                  <code className="text-[10px] font-mono bg-base-100 p-1.5 rounded-lg text-primary block truncate border border-base-300/40">
+                    https://vamoflex.com/portal/{activeBrand.slug}
+                  </code>
+                  <div className="flex items-center gap-1.5 pt-0.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const url = `https://vamoflex.com/portal/${activeBrand.slug}`;
+                        navigator.clipboard.writeText(url);
+                        setCopiedLink(true);
+                        setTimeout(() => setCopiedLink(false), 2500);
+                      }}
+                      className={`btn btn-xs flex-1 gap-1 font-medium ${
+                        copiedLink ? 'btn-success text-white' : 'btn-primary'
+                      }`}
+                    >
+                      {copiedLink ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                      <span>{copiedLink ? 'Tersalin' : 'Salin Link'}</span>
+                    </button>
+                    <a
+                      href={`https://vamoflex.com/portal/${activeBrand.slug}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn btn-outline btn-xs gap-1"
+                      title="Buka Kedai"
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                      <span>Buka</span>
+                    </a>
+                  </div>
+                </div>
+              )}
 
               <div className="w-full text-left space-y-3 text-xs">
                 <div className="flex items-center justify-between text-base-content/70">

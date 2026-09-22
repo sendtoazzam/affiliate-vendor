@@ -24,6 +24,10 @@ import {
   AlertCircle,
   CheckCircle2,
   Percent,
+  Store,
+  Copy,
+  ExternalLink,
+  Check,
 } from 'lucide-react';
 
 export default function VendorDashboardPage() {
@@ -34,6 +38,7 @@ export default function VendorDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [chartLoading, setChartLoading] = useState(false);
   const [timeRange, setTimeRange] = useState('now');
+  const [copiedStoreLink, setCopiedStoreLink] = useState(false);
 
   const fetchData = async (isSilent = false) => {
     try {
@@ -208,6 +213,75 @@ export default function VendorDashboardPage() {
         </div>
         <div className="absolute right-0 bottom-0 translate-x-12 translate-y-12 w-64 h-64 bg-secondary/10 rounded-full blur-3xl pointer-events-none" />
       </div>
+
+      {/* Dedicated Brand Storefront Share Card */}
+      {brand?.slug && (
+        <div className="card bg-base-100 border border-base-300 shadow-sm overflow-hidden">
+          <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-start sm:items-center gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                <Store className="w-5 h-5" />
+              </div>
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="font-bold text-sm text-base-content">
+                    Laman Kedai Eksklusif Jenama Anda
+                  </h3>
+                  <span className="badge badge-primary badge-xs font-semibold">Zero Distraction</span>
+                </div>
+                <p className="text-xs text-base-content/60">
+                  Kongsikan pautan ini kepada audiens anda. Hanya produk jenama anda dipaparkan dengan auto-tracking rujukan.
+                </p>
+                <div className="pt-1">
+                  <code className="text-[11px] font-mono bg-base-200 px-2.5 py-1 rounded-lg text-primary border border-base-300/60 inline-block break-all">
+                    https://vamoflex.com/portal/{brand.slug}
+                  </code>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0 self-end md:self-center">
+              <button
+                type="button"
+                onClick={() => {
+                  const url = `https://vamoflex.com/portal/${brand.slug}`;
+                  navigator.clipboard.writeText(url);
+                  setCopiedStoreLink(true);
+                  setTimeout(() => setCopiedStoreLink(false), 2500);
+                }}
+                className={`btn btn-sm gap-1.5 font-medium transition-all ${
+                  copiedStoreLink
+                    ? 'btn-success text-white'
+                    : 'btn-primary'
+                }`}
+              >
+                {copiedStoreLink ? (
+                  <>
+                    <Check className="w-4 h-4" />
+                    <span>Tersalin!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4" />
+                    <span>Salin Pautan Kedai</span>
+                  </>
+                )}
+              </button>
+
+              <a
+                href={`https://vamoflex.com/portal/${brand.slug}`}
+                target="_blank"
+                rel="noreferrer"
+                className="btn btn-outline btn-sm gap-1.5"
+                title="Buka Pratonton Kedai"
+              >
+                <ExternalLink className="w-4 h-4" />
+                <span className="hidden sm:inline">Pratonton</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Primary KPI Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
