@@ -32,7 +32,6 @@ import ConfirmModal from "@/components/ConfirmModal";
 import SessionExpiredModal from "@/components/SessionExpiredModal";
 import IdleChecker from "@/components/IdleChecker";
 import VendorLoader from "@/components/VendorLoader";
-import PreloaderBar from "@/components/PreloaderBar";
 import NotificationBell from "@/components/NotificationBell";
 import PayoutCyclePill from "@/components/PayoutCyclePill";
 import HeaderClockAnnouncement from "@/components/HeaderClockAnnouncement";
@@ -520,9 +519,6 @@ export default function DashboardLayout({
 
   return (
     <div suppressHydrationWarning className="min-h-screen bg-base-200 flex">
-      {/* Top Preloader Bar */}
-      <PreloaderBar />
-
       {/* Sidebar */}
       <aside
         className={`${

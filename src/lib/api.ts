@@ -17,6 +17,7 @@ export const authClient = axios.create({
     "Content-Type": "application/json",
     Accept: "application/json",
     "x-platform": "vendor",
+    "x-client-platform": "vendor",
   },
 });
 
@@ -68,6 +69,39 @@ export const vendorApi = {
       ...credentials,
       platform: "vendor",
     });
+    return response.data?.data || response.data;
+  },
+
+  getGoogleStatus: async () => {
+    try {
+      const response = await authClient.get("/v1/auth/google/status", {
+        params: { platform: "vendor" },
+      });
+      return response.data?.data || response.data;
+    } catch {
+      return { enabled: false, globallyEnabled: false };
+    }
+  },
+
+  getGoogleAuthUrl: async (oauthTrace?: string) => {
+    const response = await authClient.get("/v1/auth/google/url", {
+      params: oauthTrace ? { oauth_trace: oauthTrace } : undefined,
+    });
+    return response.data?.data || response.data;
+  },
+
+  googleSignIn: async (token: string) => {
+    const response = await authClient.post("/v1/auth/google", { token });
+    return response.data?.data || response.data;
+  },
+
+  exchangeGoogleCode: async (code: string) => {
+    const response = await authClient.post("/v1/auth/google/exchange", { code });
+    return response.data?.data || response.data;
+  },
+
+  completeGoogleHandoff: async (handoff: string) => {
+    const response = await authClient.post("/v1/auth/google/complete", { handoff });
     return response.data?.data || response.data;
   },
 
