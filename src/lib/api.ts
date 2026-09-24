@@ -1,6 +1,7 @@
 import axios from "axios";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.hausinternational.my";
+const AUTH_API_URL = process.env.NEXT_PUBLIC_AUTH_URL || "http://localhost:3000";
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -10,7 +11,26 @@ export const apiClient = axios.create({
   },
 });
 
+export const authClient = axios.create({
+  baseURL: AUTH_API_URL,
+  headers: {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+    "x-platform": "vendor",
+  },
+});
+
 apiClient.interceptors.request.use((config) => {
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("vf_vendor_token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+});
+
+authClient.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
     const token = localStorage.getItem("vf_vendor_token");
     if (token) {
@@ -42,9 +62,13 @@ export const vendorApi = {
     email?: string;
     username?: string;
     password: string;
+    platform?: string;
   }) => {
-    const response = await apiClient.post("/v1/auth/login", credentials);
-    return response.data;
+    const response = await authClient.post("/v1/auth/login", {
+      ...credentials,
+      platform: "vendor",
+    });
+    return response.data?.data || response.data;
   },
 
   registerVendor: async (payload: any) => {
