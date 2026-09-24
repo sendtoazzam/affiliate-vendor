@@ -1,12 +1,14 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { Calendar, DollarSign, ArrowRight } from 'lucide-react';
 import { vendorApi } from '@/lib/api';
 import { SettlementStatement } from '@/lib/types';
+import { useAuth } from '@/lib/auth-context';
 
 export default function PayoutCyclePill() {
+  const { hasPermission } = useAuth();
   const [latestStatement, setLatestStatement] = useState<SettlementStatement | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -29,6 +31,11 @@ export default function PayoutCyclePill() {
   useEffect(() => {
     let isMounted = true;
 
+    if (!hasPermission('vendor.accounting.view')) {
+      setIsLoading(false);
+      return;
+    }
+
     const checkSettlementStatus = async () => {
       try {
         const res = await vendorApi.getStatements({ per_page: 1 });
@@ -36,8 +43,8 @@ export default function PayoutCyclePill() {
         if (isMounted && list && list.length > 0) {
           setLatestStatement(list[0]);
         }
-      } catch (err) {
-        console.error('Failed to fetch settlement statement status', err);
+      } catch {
+        // Silently fallback to standard payout countdown
       } finally {
         if (isMounted) {
           setIsLoading(false);
