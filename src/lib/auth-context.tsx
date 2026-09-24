@@ -41,11 +41,13 @@ interface AuthContextType {
     user: any,
     brand?: Brand,
     permissions?: string[],
-    config?: VendorPortalConfig
+    config?: VendorPortalConfig,
+    refreshToken?: string
   ) => void;
   logout: () => void;
   updateUser: (updatedUser: any) => void;
   refreshBrand: () => Promise<void>;
+  refreshModules: () => Promise<any>;
   dismissSessionExpired: () => void;
   hasPermission: (permission: string | string[]) => boolean;
 }
@@ -90,8 +92,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     router.push("/login");
   }, [router]);
 
-  const refreshBrand = async () => {
+  const refreshModules = React.useCallback(async () => {
     try {
+      const authData = await vendorApi.getModules("vendor");
+      const authPermissions = authData?.modules || authData?.permissions;
+      if (Array.isArray(authPermissions) && authPermissions.length > 0) {
+        setPermissions(authPermissions);
+        localStorage.setItem(
+          "vf_vendor_permissions",
+          JSON.stringify(authPermissions)
+        );
+        return authPermissions;
+      }
+    } catch {
+      try {
+        const verifyData = await vendorApi.verifyToken();
+        const verifyUser = verifyData?.user || verifyData;
+        const verifyPerms =
+          verifyUser?.permissions ||
+          verifyUser?.modules ||
+          verifyUser?.platformAccess?.vendor?.modules;
+        if (Array.isArray(verifyPerms) && verifyPerms.length > 0) {
+          setPermissions(verifyPerms);
+          localStorage.setItem(
+            "vf_vendor_permissions",
+            JSON.stringify(verifyPerms)
+          );
+          return verifyPerms;
+        }
+      } catch {}
+    }
+    return null;
+  }, []);
+
+  const refreshBrand = React.useCallback(async () => {
+    try {
+      await refreshModules();
+
       const data = await vendorApi.getProfile();
       if (data.brand) {
         const brandWithClasses = {
@@ -112,13 +149,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           setIsOnboardingOpen(true);
         }
       }
-      if (data.permissions) {
-        setPermissions(data.permissions);
-        localStorage.setItem(
-          "vf_vendor_permissions",
-          JSON.stringify(data.permissions)
-        );
-      }
       if (data.roles) {
         setRoles(data.roles);
       }
@@ -134,7 +164,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         triggerSessionExpired();
       }
     }
-  };
+  }, [refreshModules, triggerSessionExpired]);
 
   const startOnboarding = () => {
     setIsOnboardingOpen(true);
@@ -220,19 +250,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     const verifyAuthToken = async () => {
       try {
+        const verifyRes = await vendorApi.verifyToken();
+        if (verifyRes && (verifyRes.isValid === false || verifyRes.valid === false)) {
+          const refreshToken = localStorage.getItem("vf_vendor_refresh_token");
+          if (refreshToken) {
+            try {
+              const refreshRes = await vendorApi.refreshToken(refreshToken);
+              const newAccessToken = refreshRes?.access_token || refreshRes?.token;
+              if (newAccessToken) {
+                localStorage.setItem("vf_vendor_token", newAccessToken);
+                setToken(newAccessToken);
+                if (refreshRes?.refresh_token || refreshRes?.refreshToken) {
+                  localStorage.setItem(
+                    "vf_vendor_refresh_token",
+                    refreshRes.refresh_token || refreshRes.refreshToken,
+                  );
+                }
+                await refreshBrand();
+                return;
+              }
+            } catch {
+              triggerSessionExpired();
+              return;
+            }
+          }
+          triggerSessionExpired();
+          return;
+        }
         await refreshBrand();
       } catch (err: any) {
-        if (err.response?.status === 401) {
+        if (err.response?.status === 401 || err.response?.data?.details?.error_code === "PLATFORM_DISABLED") {
           triggerSessionExpired();
         }
       }
     };
 
-    // Run verification immediately
     verifyAuthToken();
-
-    // Periodic check every 45s
-    const interval = setInterval(verifyAuthToken, 45000);
+    const interval = setInterval(verifyAuthToken, 30000);
     return () => clearInterval(interval);
   }, [token, triggerSessionExpired]);
 
@@ -275,9 +329,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     newUser: any,
     newBrand?: Brand,
     newPermissions?: string[],
-    newConfig?: VendorPortalConfig
+    newConfig?: VendorPortalConfig,
+    newRefreshToken?: string
   ) => {
     localStorage.setItem("vf_vendor_token", newToken);
+    if (newRefreshToken) {
+      localStorage.setItem("vf_vendor_refresh_token", newRefreshToken);
+    }
     localStorage.setItem("vf_vendor_user", JSON.stringify(newUser));
     if (newBrand) {
       localStorage.setItem("vf_vendor_brand", JSON.stringify(newBrand));
@@ -308,7 +366,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const logout = () => {
+    vendorApi.logout();
     localStorage.removeItem("vf_vendor_token");
+    localStorage.removeItem("vf_vendor_refresh_token");
     localStorage.removeItem("vf_vendor_user");
     localStorage.removeItem("vf_vendor_brand");
     localStorage.removeItem("vf_vendor_permissions");
@@ -384,6 +444,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         logout,
         updateUser,
         refreshBrand,
+        refreshModules,
         dismissSessionExpired,
         hasPermission,
       }}

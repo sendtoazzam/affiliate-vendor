@@ -48,8 +48,18 @@ export default function LoginForm() {
       );
       setIsFirstTime(isFirstTimeLogin);
 
-      const userPermissions = user?.permissions || response?.permissions || [];
-      login(token, user, brand, userPermissions);
+      const userPermissions =
+        user?.permissions ||
+        user?.modules ||
+        response?.permissions ||
+        response?.modules ||
+        user?.platformAccess?.vendor?.modules ||
+        [];
+      const refreshToken = response.refresh_token || response.refreshToken;
+      if (refreshToken) {
+        localStorage.setItem("vf_vendor_refresh_token", refreshToken);
+      }
+      login(token, user, brand, userPermissions, undefined, refreshToken);
       setLoggedInBrand(brand?.name || user?.brand_name || null);
       setLoggedInUser(user?.name || user?.username || null);
       setIsPreparing(true);

@@ -2,12 +2,17 @@ import axios from "axios";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.hausinternational.my";
 const AUTH_API_URL = process.env.NEXT_PUBLIC_AUTH_URL || "http://localhost:3000";
+const AUTH_API_KEY =
+  process.env.NEXT_PUBLIC_AUTH_API_KEY ||
+  process.env.NEXT_PUBLIC_API_KEY ||
+  "ak_live_FYc7jzoq7Hm-DqG0ViycMntkXxUOh_Hc4aIE1qDADBo";
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",
+    "x-api-key": AUTH_API_KEY,
   },
 });
 
@@ -18,10 +23,18 @@ export const authClient = axios.create({
     Accept: "application/json",
     "x-platform": "vendor",
     "x-client-platform": "vendor",
+    "x-api-key": AUTH_API_KEY,
   },
 });
 
 apiClient.interceptors.request.use((config) => {
+  const key =
+    process.env.NEXT_PUBLIC_AUTH_API_KEY ||
+    process.env.NEXT_PUBLIC_API_KEY ||
+    AUTH_API_KEY;
+  if (key) {
+    config.headers["x-api-key"] = key;
+  }
   if (typeof window !== "undefined") {
     const token = localStorage.getItem("vf_vendor_token");
     if (token) {
@@ -32,6 +45,13 @@ apiClient.interceptors.request.use((config) => {
 });
 
 authClient.interceptors.request.use((config) => {
+  const key =
+    process.env.NEXT_PUBLIC_AUTH_API_KEY ||
+    process.env.NEXT_PUBLIC_API_KEY ||
+    AUTH_API_KEY;
+  if (key) {
+    config.headers["x-api-key"] = key;
+  }
   if (typeof window !== "undefined") {
     const token = localStorage.getItem("vf_vendor_token");
     if (token) {
@@ -48,6 +68,27 @@ apiClient.interceptors.response.use(
       const isAuthUrl = error.config?.url?.includes("/auth/login") || error.config?.url?.includes("/auth/admin/login");
       if (!isAuthUrl) {
         localStorage.removeItem("vf_vendor_token");
+        localStorage.removeItem("vf_vendor_refresh_token");
+        localStorage.removeItem("vf_vendor_user");
+        localStorage.removeItem("vf_vendor_brand");
+        window.dispatchEvent(new CustomEvent("vf:session-expired"));
+      }
+    }
+    return Promise.reject(error);
+  },
+);
+
+authClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (typeof window !== "undefined" && error.response?.status === 401) {
+      const isAuthUrl =
+        error.config?.url?.includes("/auth/login") ||
+        error.config?.url?.includes("/auth/admin/login") ||
+        error.config?.url?.includes("/auth/google/status");
+      if (!isAuthUrl) {
+        localStorage.removeItem("vf_vendor_token");
+        localStorage.removeItem("vf_vendor_refresh_token");
         localStorage.removeItem("vf_vendor_user");
         localStorage.removeItem("vf_vendor_brand");
         window.dispatchEvent(new CustomEvent("vf:session-expired"));
@@ -70,6 +111,14 @@ export const vendorApi = {
       platform: "vendor",
     });
     return response.data?.data || response.data;
+  },
+
+  logout: async () => {
+    try {
+      await authClient.post("/v1/auth/logout");
+    } catch {
+      // ignore network errors on logout
+    }
   },
 
   getGoogleStatus: async () => {
@@ -167,8 +216,28 @@ export const vendorApi = {
   },
 
   verifyToken: async () => {
-    const response = await apiClient.get("/v1/vendor/portal/profile");
-    return response.data;
+    const response = await authClient.get("/v1/auth/verify");
+    return response.data?.data || response.data;
+  },
+
+  getAuthUser: async () => {
+    const response = await authClient.get("/v1/auth/verify");
+    return response.data?.data || response.data;
+  },
+
+  getModules: async (platform: string = "vendor") => {
+    const response = await authClient.get("/v1/auth/modules", {
+      params: { platform },
+    });
+    return response.data?.data || response.data;
+  },
+
+  refreshToken: async (refreshToken: string) => {
+    const response = await authClient.post("/v1/auth/refresh", {
+      refreshToken,
+      refresh_token: refreshToken,
+    });
+    return response.data?.data || response.data;
   },
 
   getProfile: async () => {
