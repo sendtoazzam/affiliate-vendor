@@ -7,11 +7,30 @@ const AUTH_API_KEY =
   process.env.NEXT_PUBLIC_API_KEY ||
   "ak_live_FYc7jzoq7Hm-DqG0ViycMntkXxUOh_Hc4aIE1qDADBo";
 
+const VENDOR_DEFAULT_COUNTRY =
+  process.env.NEXT_PUBLIC_COUNTRY_ORIGIN ||
+  process.env.NEXT_PUBLIC_COUNTRY ||
+  process.env.NEXT_PUBLIC_DEFAULT_COUNTRY ||
+  "MY";
+
+export const getCountryOrigin = (): string => {
+  if (typeof window !== "undefined") {
+    const saved =
+      localStorage.getItem("vf_vendor_country") ||
+      localStorage.getItem("x-country-origin");
+    if (saved && saved.trim()) return saved.trim().toUpperCase();
+  }
+  return VENDOR_DEFAULT_COUNTRY.toUpperCase();
+};
+
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",
+    "x-platform": "vendor",
+    "x-client-platform": "vendor",
+    "x-country-origin": VENDOR_DEFAULT_COUNTRY,
     "x-api-key": AUTH_API_KEY,
   },
 });
@@ -23,6 +42,7 @@ export const authClient = axios.create({
     Accept: "application/json",
     "x-platform": "vendor",
     "x-client-platform": "vendor",
+    "x-country-origin": VENDOR_DEFAULT_COUNTRY,
     "x-api-key": AUTH_API_KEY,
   },
 });
@@ -35,6 +55,9 @@ apiClient.interceptors.request.use((config) => {
   if (key) {
     config.headers["x-api-key"] = key;
   }
+  const country = getCountryOrigin();
+  config.headers["x-country-origin"] = country;
+  config.headers["x-country"] = country;
   if (typeof window !== "undefined") {
     const token = localStorage.getItem("vf_vendor_token");
     if (token) {
@@ -52,6 +75,9 @@ authClient.interceptors.request.use((config) => {
   if (key) {
     config.headers["x-api-key"] = key;
   }
+  const country = getCountryOrigin();
+  config.headers["x-country-origin"] = country;
+  config.headers["x-country"] = country;
   if (typeof window !== "undefined") {
     const token = localStorage.getItem("vf_vendor_token");
     if (token) {
