@@ -8,10 +8,23 @@ const AUTH_API_KEY =
   "ak_live_FYc7jzoq7Hm-DqG0ViycMntkXxUOh_Hc4aIE1qDADBo";
 
 const VENDOR_DEFAULT_COUNTRY =
+  process.env.APP_COUNTRY ||
+  process.env.NEXT_PUBLIC_APP_COUNTRY ||
   process.env.NEXT_PUBLIC_COUNTRY_ORIGIN ||
   process.env.NEXT_PUBLIC_COUNTRY ||
   process.env.NEXT_PUBLIC_DEFAULT_COUNTRY ||
   "MY";
+
+const VENDOR_DEFAULT_LANGUAGE =
+  process.env.APP_LANGUAGE ||
+  process.env.NEXT_PUBLIC_APP_LANGUAGE ||
+  process.env.NEXT_PUBLIC_LANGUAGE ||
+  "en_MS";
+
+const VENDOR_DEFAULT_TIMEZONE =
+  process.env.TIMEZONE ||
+  process.env.NEXT_PUBLIC_TIMEZONE ||
+  "Asia/Kuala_Lumpur";
 
 export const getCountryOrigin = (): string => {
   if (typeof window !== "undefined") {
@@ -21,6 +34,22 @@ export const getCountryOrigin = (): string => {
     if (saved && saved.trim()) return saved.trim().toUpperCase();
   }
   return VENDOR_DEFAULT_COUNTRY.toUpperCase();
+};
+
+export const getAppLanguage = (): string => {
+  if (typeof window !== "undefined") {
+    const saved = localStorage.getItem("vf_vendor_language") || localStorage.getItem("x-app-language");
+    if (saved && saved.trim()) return saved.trim();
+  }
+  return VENDOR_DEFAULT_LANGUAGE;
+};
+
+export const getAppTimezone = (): string => {
+  if (typeof window !== "undefined") {
+    const saved = localStorage.getItem("vf_vendor_timezone") || localStorage.getItem("x-timezone");
+    if (saved && saved.trim()) return saved.trim();
+  }
+  return VENDOR_DEFAULT_TIMEZONE;
 };
 
 export const apiClient = axios.create({
