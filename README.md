@@ -137,8 +137,34 @@ vf-vendor-dashboard/
 
 ---
 
+## 🐳 Docker Deployment
+
+The application is containerized using a multi-stage Docker build with Nginx as the lightweight production runner.
+
+### Quick Start with Docker Compose
+
+```bash
+# Build and run the container locally on port 3301
+docker compose up -d --build
+
+# View container logs
+docker compose logs -f affiliate-vendor
+
+# Stop the container
+docker compose down
+```
+
+### Production Deployment
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+---
+
 ## 🔒 Security & Guidelines
 
 - Single Hub Central Logistics Fulfillment model.
 - Strictly read-only financial data access for vendor users with authenticated Bearer tokens.
 - Theme consistency powered by semantic DaisyUI theme tokens and responsive layouts.
+

@@ -1,0 +1,17 @@
+services:
+  affiliate-vendor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-https://api.hausinternational.my}
+        - NEXT_PUBLIC_AUTH_URL=${NEXT_PUBLIC_AUTH_URL:-http://localhost:3000}
+        - NEXT_PUBLIC_AUTH_API_KEY=${NEXT_PUBLIC_AUTH_API_KEY:-}
+        - NEXT_PUBLIC_API_KEY=${NEXT_PUBLIC_API_KEY:-}
+        - APP_COUNTRY=${APP_COUNTRY:-MY}
+        - APP_LANGUAGE=${APP_LANGUAGE:-en_MS}
+        - TIMEZONE=${TIMEZONE:-Asia/Kuala_Lumpur}
+    image: affiliate-vendor:latest
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3301}:80"
